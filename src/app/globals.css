@@ -1,44 +1,107 @@
 @import "tailwindcss";
-@import "leaflet/dist/leaflet.css";
 
+/*
+ * Tokens repris de l'application mobile IBIGO (app/theme.ts).
+ * Les composants utilisent uniquement les classes générées par @theme.
+ */
 :root {
-  --bg-base: #F7F4EF;
-  --bg-surface: #FFFFFF;
-  --bg-dark-card: #1E242B;
-  --bg-dark-card-alt: #2A323D;
-  --primary: #1E242B;
-  --primary-soft: #FFF0EB;
-  --secondary: #FD4F49;
-  --accent: #FD4F49;
-  --accent-soft: #FFF0EB;
-  --background: #F7F4EF;
-  --surface: #FFFFFF;
-  --surface-muted: #F0ECE4;
-  --ink: #1E242B;
-  --muted: #666F7A;
-  --border: #E5E0D8;
-  --border-subtle: #EFEBE4;
-  --line: #E5E0D8;
-  
-  --success: #2E7D32;
-  --success-soft: #E8F5E9;
-  --warning: #F57C00;
-  --warning-soft: #FFF3E0;
-  --danger: #D32F2F;
-  --danger-soft: #FFEBEE;
-  --info: #1976D2;
-  --info-soft: #E3F2FD;
+  --bg-base: #f7f4ef;
+  --bg-surface: #ffffff;
+  --surface-muted: #f0ece4;
+  --bg-dark-card: #1e242b;
+  --bg-dark-card-alt: #2a323d;
 
-  --text-primary: #1E242B;
-  --text-secondary: #666F7A;
-  --text-muted: #94A3B8;
-  --text-on-dark: #FFFFFF;
-  --text-on-dark-secondary: #94A3B8;
+  --accent: #fd4f49;
+  --accent-strong: #e53e38;
+  --accent-soft: #fff0eb;
 
-  --sidebar-bg: #1E242B;
-  --sidebar-active: #FD4F49;
-  --sidebar-border: #2A323D;
-  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --text-primary: #1e242b;
+  --text-secondary: #666f7a;
+  --text-muted: #94a3b8;
+
+  --border: #e5e0d8;
+  --border-subtle: #efebe4;
+
+  --success: #2e7d32;
+  --success-soft: #e8f5e9;
+  --success-line: #c8e6c9;
+  --warning: #f57c00;
+  --warning-soft: #fff3e0;
+  --warning-line: #ffe0b2;
+  --danger: #d32f2f;
+  --danger-soft: #ffebee;
+  --danger-line: #ffcdd2;
+  --info: #1976d2;
+  --info-soft: #e3f2fd;
+  --info-line: #bbdefb;
+}
+
+[data-theme="dark"] {
+  --bg-base: #12161a;
+  --bg-surface: #1e242b;
+  --surface-muted: #242c36;
+  --bg-dark-card: #151a20;
+  --bg-dark-card-alt: #232a33;
+
+  --accent: #fd4f49;
+  --accent-strong: #e53e38;
+  --accent-soft: #382417;
+
+  --text-primary: #f7f4ef;
+  --text-secondary: #a2aab4;
+  --text-muted: #6e7682;
+
+  --border: #2a323d;
+  --border-subtle: #222932;
+
+  --success: #43a05b;
+  --success-soft: #172d1e;
+  --success-line: #24452e;
+  --warning: #fb8c00;
+  --warning-soft: #382715;
+  --warning-line: #553a1c;
+  --danger: #e53935;
+  --danger-soft: #381a16;
+  --danger-line: #5a2822;
+  --info: #2196f3;
+  --info-soft: #152c42;
+  --info-line: #1f4263;
+}
+
+@theme inline {
+  --color-sand: var(--bg-base);
+  --color-surface: var(--bg-surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-dark-card: var(--bg-dark-card);
+  --color-dark-card-alt: var(--bg-dark-card-alt);
+
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-ink: var(--text-primary);
+  --color-muted: var(--text-secondary);
+  --color-faint: var(--text-muted);
+
+  --color-line: var(--border);
+  --color-line-subtle: var(--border-subtle);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-line: var(--success-line);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-line: var(--warning-line);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-line: var(--danger-line);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-info-line: var(--info-line);
+
+  --radius-card: 18px;
+  --shadow-card: 0 2px 8px rgb(30 36 43 / 0.04), 0 1px 2px rgb(30 36 43 / 0.02);
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 html {
@@ -49,66 +112,14 @@ body {
   margin: 0;
   background-color: var(--bg-base);
   color: var(--text-primary);
-  font-family: var(--font-inter);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-* {
-  box-sizing: border-box;
 }
 
 button {
   cursor: pointer;
 }
 
-.leaflet-container {
-  height: 100%;
-  width: 100%;
-  background: #edf2f7;
-  z-index: 0;
-}
-
-.leaflet-control-zoom {
-  border: none !important;
-  box-shadow: 0 10px 20px rgba(30, 36, 43, 0.08) !important;
-}
-
 ::selection {
-  background: rgba(253, 79, 73, 0.2);
-}
-
-[data-theme="dark"] {
-  --bg-base: #12161A;
-  --bg-surface: #1E242B;
-  --bg-dark-card: #151A20;
-  --bg-dark-card-alt: #232A33;
-  --primary: #FFFFFF;
-  --primary-soft: #382417;
-  --secondary: #FD4F49;
-  --accent: #FD4F49;
-  --accent-soft: #382417;
-  --background: #12161A;
-  --surface: #1E242B;
-  --surface-muted: #242C36;
-  --ink: #F7F4EF;
-  --muted: #A2AAB4;
-  --border: #2A323D;
-  --border-subtle: #222932;
-  --line: #2A323D;
-
-  --success: #43A05B;
-  --success-soft: #172D1E;
-  --warning: #FB8C00;
-  --warning-soft: #382715;
-  --danger: #E53935;
-  --danger-soft: #381A16;
-  --info: #2196F3;
-  --info-soft: #152C42;
-
-  --text-primary: #F7F4EF;
-  --text-secondary: #A2AAB4;
-  --text-muted: #6E7682;
-  --text-on-dark: #FFFFFF;
-  --text-on-dark-secondary: #A2AAB4;
+  background: rgb(253 79 73 / 0.2);
 }

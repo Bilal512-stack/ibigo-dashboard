@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -9,19 +10,14 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Ibigo - Plateforme de Transit & Fret Transfrontalier",
-  description:
-    "Tableau de bord administrateur & supervision logistique pour le corridor RCA - Cameroun - Tchad.",
+  title: "IBIGO - Back-office d'administration",
+  description: "Panneau d'administration de la plateforme logistique IBIGO (CEMAC).",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="fr" className={inter.variable}>
-      <body className="antialiased min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)]">
-        {children}
-      </body>
+      <body className="antialiased min-h-screen bg-sand font-sans text-ink">{children}</body>
     </html>
   );
 }
