@@ -6,9 +6,9 @@ import { formatCompactFcfa, formatFcfa, formatNumber, formatShortDate } from "@/
 
 function ChartCard({ title, subtitle, className, children }: { title: string; subtitle: string; className: string; children: ReactNode }) {
   return (
-    <section className={`bg-surface border border-line rounded-card p-5 shadow-card ${className}`}>
-      <h2 className="text-sm font-bold text-ink">{title}</h2>
-      <p className="text-[11px] text-muted mt-0.5 mb-4">{subtitle}</p>
+    <section className={`min-w-0 overflow-hidden bg-surface border border-line rounded-card p-4 sm:p-5 shadow-card ${className}`}>
+      <h2 className="text-sm font-bold text-ink truncate">{title}</h2>
+      <p className="text-[11px] text-muted mt-0.5 mb-4 truncate">{subtitle}</p>
       {children}
     </section>
   );
@@ -91,6 +91,19 @@ export function WeeklyRevenueChart({ weeks, className }: { weeks: WeekTotal[]; c
   );
 }
 
+// Couleurs de marque des opérateurs Mobile Money ; palette de repli pour les autres libellés (forfaits…)
+const BRAND_COLORS: { match: RegExp; color: string }[] = [
+  { match: /orange/i, color: "#FF6600" },
+  { match: /mtn/i, color: "#EAB308" },
+  { match: /airtel/i, color: "#E40000" },
+  { match: /moov/i, color: "#0A6EBD" },
+];
+const PALETTE = ["#FD4F49", "#3B82F6", "#10B981", "#8B5CF6", "#F59E0B", "#06B6D4", "#EC4899", "#64748B"];
+
+function colorFor(label: string, index: number) {
+  return BRAND_COLORS.find((brand) => brand.match.test(label))?.color ?? PALETTE[index % PALETTE.length];
+}
+
 export function RankedBarsChart({
   title,
   subtitle,
@@ -102,26 +115,105 @@ export function RankedBarsChart({
   items: RankedTotal[];
   className: string;
 }) {
-  const max = Math.max(1, ...items.map((item) => item.amountFcfa));
+  const [hovered, setHovered] = useState<string | null>(null);
+  const total = items.reduce((sum, item) => sum + item.amountFcfa, 0);
+  const colored = items.map((item, index) => ({ ...item, color: colorFor(item.label, index) }));
+  const active = colored.find((item) => item.label === hovered) ?? null;
+
+  // Anneau SVG : circonférence normalisée à 100 (r = 100 / 2π)
+  const RADIUS = 15.9155;
+  const GAP = colored.length > 1 ? 0.8 : 0;
+  let cumulative = 0;
+  const segments = colored.map((item) => {
+    const percent = total > 0 ? (item.amountFcfa / total) * 100 : 0;
+    const segment = { ...item, percent, offset: cumulative };
+    // eslint-disable-next-line react-hooks/immutability
+    cumulative += percent;
+    return segment;
+  });
 
   return (
     <ChartCard title={title} subtitle={subtitle} className={className}>
       {items.length === 0 && <p className="text-xs text-muted">Aucun paiement réussi sur cette sélection.</p>}
-      <ul className="space-y-3.5">
-        {items.map((item) => (
-          <li key={item.label}>
-            <div className="flex items-baseline justify-between gap-2 text-[11px]">
-              <span className="font-semibold text-ink truncate">{item.label}</span>
-              <span className="text-muted tabular-nums shrink-0">{formatCompactFcfa(item.amountFcfa)} F</span>
+
+      {total > 0 && (
+        <div className="flex min-w-0 flex-col items-center gap-5">
+          {/* Diagramme circulaire (s'adapte à la largeur de la carte) */}
+          <div
+            className="relative aspect-square w-full max-w-[168px]"
+            role="img"
+            aria-label={`Répartition : ${colored
+              .map((item) => `${item.label} ${Math.round((item.amountFcfa / total) * 100)} %`)
+              .join(", ")}`}
+          >
+            <svg viewBox="0 0 42 42" className="h-full w-full -rotate-90">
+              <circle cx="21" cy="21" r={RADIUS} fill="none" stroke="currentColor" strokeWidth="4.6" className="text-line-subtle" />
+              {segments.map((segment) => (
+                <circle
+                  key={segment.label}
+                  cx="21"
+                  cy="21"
+                  r={RADIUS}
+                  fill="none"
+                  stroke={segment.color}
+                  strokeWidth={hovered === segment.label ? 5.6 : 4.6}
+                  strokeDasharray={`${Math.max(0, segment.percent - GAP)} ${100 - Math.max(0, segment.percent - GAP)}`}
+                  strokeDashoffset={-segment.offset}
+                  className="cursor-pointer transition-all duration-200"
+                  style={{ opacity: hovered && hovered !== segment.label ? 0.35 : 1 }}
+                  onMouseEnter={() => setHovered(segment.label)}
+                  onMouseLeave={() => setHovered(null)}
+                >
+                  <title>{`${segment.label} · ${formatFcfa(segment.amountFcfa)} · ${formatNumber(segment.count)} paiements`}</title>
+                </circle>
+              ))}
+            </svg>
+
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-[22%] text-center">
+              <span className="w-full truncate text-[10px] text-muted">{active ? active.label : "Total"}</span>
+              <span className="w-full truncate text-[15px] font-bold leading-tight text-ink tabular-nums">
+                {formatCompactFcfa(active ? active.amountFcfa : total)} F
+              </span>
+              {active && (
+                <span className="text-[10px] font-semibold tabular-nums" style={{ color: active.color }}>
+                  {Math.round((active.amountFcfa / total) * 100)} %
+                </span>
+              )}
             </div>
-            <div
-              className="mt-1 h-2 rounded-r bg-accent"
-              style={{ width: `${Math.max(1, (item.amountFcfa / max) * 100)}%` }}
-              title={`${formatFcfa(item.amountFcfa)} · ${formatNumber(item.count)} paiements`}
-            />
-          </li>
-        ))}
-      </ul>
+          </div>
+
+          {/* Légende : toujours sous l'anneau, rien ne déborde */}
+          <ul className="w-full min-w-0 divide-y divide-line-subtle">
+            {colored.map((item) => {
+              const share = Math.round((item.amountFcfa / total) * 100);
+              return (
+                <li
+                  key={item.label}
+                  onMouseEnter={() => setHovered(item.label)}
+                  onMouseLeave={() => setHovered(null)}
+                  className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2.5 py-2 transition-opacity first:pt-0 last:pb-0"
+                  style={{ opacity: hovered && hovered !== item.label ? 0.45 : 1 }}
+                  title={`${formatFcfa(item.amountFcfa)} · ${formatNumber(item.count)} paiements`}
+                >
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                  <div className="min-w-0">
+                    <p className="truncate text-[11px] font-semibold text-ink">{item.label}</p>
+                    <p className="truncate text-[10px] text-muted">{formatNumber(item.count)} paiements</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="whitespace-nowrap text-[11px] font-semibold text-ink tabular-nums">
+                      {formatCompactFcfa(item.amountFcfa)} F
+                    </p>
+                    <p className="whitespace-nowrap text-[10px] font-semibold tabular-nums" style={{ color: item.color }}>
+                      {share} %
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </ChartCard>
   );
 }
