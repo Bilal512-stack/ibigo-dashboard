@@ -41,9 +41,9 @@ export function PaymentsTable({ payments }: { payments: Payment[] }) {
 
   return (
     <section className="bg-surface border border-line rounded-card overflow-hidden shadow-card">
-      <div className="p-4 px-6 border-b border-line flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+      <div className="p-3 sm:p-4 sm:px-6 border-b border-line flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-bold text-ink mb-2">Tous les paiements</h2>
+          <h2 className="mb-3 text-base font-bold text-ink">Tous les paiements</h2>
           <FilterTabs
             tabs={tabs}
             active={status}
@@ -63,10 +63,40 @@ export function PaymentsTable({ payments }: { payments: Payment[] }) {
         />
       </div>
 
-      <div className="overflow-x-auto">
+      <ul className="divide-y divide-line-subtle md:hidden">
+        {visible.length === 0 && <li className="p-8 text-center text-xs text-muted">Aucun paiement pour ces filtres.</li>}
+        {visible.map((payment) => (
+          <li key={payment.id} className="space-y-3 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="font-mono text-xs font-bold text-ink">{payment.id}</div>
+                <div className="text-[11px] text-muted">{formatDateTime(payment.timestamp)}</div>
+              </div>
+              <StatusPill label={payment.status} tone={PAYMENT_STATUS_TONES[payment.status]} size="sm" />
+            </div>
+            <div className="flex items-end justify-between gap-3">
+              <div className="min-w-0">
+                <div className="truncate text-xs font-bold text-ink">{payment.payerName}</div>
+                <div className="truncate text-[11px] text-muted">{payment.payerRole} · {payment.payerPhone}</div>
+              </div>
+              <div className="shrink-0 text-right text-sm font-extrabold text-ink tabular-nums">{formatFcfa(payment.amountFcfa)}</div>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line-subtle bg-sand/50 px-3 py-2 text-[11px] text-ink">
+              <span className="flex items-center gap-1.5 font-semibold">
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: OPERATOR_COLORS[payment.operator] }} aria-hidden="true" />
+                {payment.operator}
+              </span>
+              <span className="text-muted">{countryLabel(payment.country)}</span>
+              <span className="text-muted">{payment.packName} · {payment.tokens} jeton{payment.tokens > 1 ? "s" : ""}</span>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full text-left text-xs min-w-[880px]">
           <thead>
-            <tr className="bg-dark-card text-white font-semibold">
+            <tr className="bg-dark-card text-[11px] font-semibold uppercase tracking-wider text-white/90">
               <th scope="col" className="py-3.5 px-5">Référence</th>
               <th scope="col" className="py-3.5 px-5">Émetteur</th>
               <th scope="col" className="py-3.5 px-5">Opérateur</th>
@@ -76,12 +106,12 @@ export function PaymentsTable({ payments }: { payments: Payment[] }) {
               <th scope="col" className="py-3.5 px-5">Statut</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-line/70">
+          <tbody className="divide-y divide-line-subtle">
             {visible.length === 0 && <EmptyRow colSpan={7} label="Aucun paiement pour ces filtres." />}
             {visible.map((payment) => (
-              <tr key={payment.id} className="hover:bg-sand/70 transition-colors">
+              <tr key={payment.id} className="group transition-colors hover:bg-accent-soft/40 even:bg-sand/30">
                 <td className="py-3.5 px-5 whitespace-nowrap">
-                  <div className="font-bold text-ink">{payment.id}</div>
+                  <div className="font-mono font-bold text-ink">{payment.id}</div>
                   <div className="text-[11px] text-muted">{formatDateTime(payment.timestamp)}</div>
                 </td>
                 <td className="py-3.5 px-5 whitespace-nowrap">
@@ -109,7 +139,7 @@ export function PaymentsTable({ payments }: { payments: Payment[] }) {
         </table>
       </div>
 
-      <div className="p-4 px-6 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted">
+      <div className="p-3 sm:p-4 sm:px-6 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted">
         <span>{rows.length} paiements · Données de démonstration</span>
         <div className="flex items-center gap-2">
           <button type="button" className={pagerButton} disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>

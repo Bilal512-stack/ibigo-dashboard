@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BorderControlCard } from "@/components/users/BorderControlCard";
 import { ContactCell, IdentityCell } from "@/components/users/UserCells";
 import { CountrySelect, EmptyRow, FilterTabs, SearchInput, matchesSearch } from "@/components/ui/FilterControls";
 import { HeaderChip, PageHeader } from "@/components/ui/PageHeader";
@@ -20,7 +19,7 @@ const TAB_STATUSES: Record<Exclude<Tab, "all">, VerificationStatus[]> = {
   blocked: ["rejected", "suspended"],
 };
 
-const primaryButton = "px-3 py-1.5 rounded-lg text-xs font-bold bg-dark-card hover:bg-dark-card-alt text-white transition-colors";
+const primaryButton = "px-3 py-1.5 rounded-lg text-xs font-bold bg-ink text-surface hover:opacity-85 transition-opacity";
 const dangerButton = "px-2.5 py-1.5 rounded-lg text-xs font-bold border border-danger text-danger hover:bg-danger-soft transition-colors";
 
 function VerificationActions({ carrier }: { carrier: Carrier }) {
@@ -86,7 +85,7 @@ export function TransporteursPage() {
         title="Transporteurs"
         description="Dossiers de vérification et accès des transporteurs à la bourse de fret"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <HeaderChip label="À vérifier" value={`${pendingCount} dossiers`} valueClassName="text-accent" />
           <HeaderChip label="Taux vérifié" value={formatPercent(verifiedRate)} valueClassName="text-success" />
         </div>
@@ -94,16 +93,78 @@ export function TransporteursPage() {
 
       <FilterTabs tabs={tabs} active={tab} onChange={setTab} />
 
-      <div className="bg-surface border border-line rounded-card p-4 flex flex-col md:flex-row items-center justify-between gap-3 shadow-card">
+      <div className="bg-surface border border-line rounded-card p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-card [&_select]:w-full md:[&_select]:w-auto">
         <SearchInput value={search} onChange={setSearch} placeholder="Filtrer par nom, téléphone, société..." />
         <CountrySelect value={country} onChange={setCountry} />
       </div>
 
-      <div className="bg-surface border border-line rounded-card overflow-hidden shadow-card">
+      {/* Mobile : une fiche par transporteur, aucune table à faire défiler */}
+      <div className="space-y-3 md:hidden">
+        {rows.length === 0 && (
+          <p className="rounded-card border border-line bg-surface p-8 text-center text-xs text-muted">Aucun transporteur pour ces filtres.</p>
+        )}
+        {rows.map((carrier) => {
+          const meta = VERIFICATION_META[carrier.verification];
+          return (
+            <article key={carrier.id} className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+              <div className="flex items-start justify-between gap-3 p-4">
+                <div className="min-w-0">
+                  <IdentityCell initials={carrier.initials} name={carrier.name} company={carrier.company} />
+                </div>
+                <div className="shrink-0 text-right">
+                  <StatusPill label={meta.label} tone={meta.tone} size="sm" />
+                  <div className="mt-1 text-[10px] text-muted">{carrier.submissionDate}</div>
+                </div>
+              </div>
+
+              <dl className="grid grid-cols-2 gap-px border-y border-line-subtle bg-line-subtle text-[11px]">
+                <div className="bg-surface p-3">
+                  <dt className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted">Contact</dt>
+                  <dd><ContactCell flag={carrier.countryFlag} phone={carrier.phone} location={carrier.countryLabel} /></dd>
+                </div>
+                <div className="bg-surface p-3">
+                  <dt className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted">Profil</dt>
+                  <dd>
+                    <div className="font-bold text-ink">{carrier.kind}</div>
+                    <div className="text-muted">{carrier.trucks} camion{carrier.trucks > 1 ? "s" : ""}</div>
+                    <div className="text-muted">{carrier.tokensAvailable} jetons · {carrier.tokensReserved} réservé{carrier.tokensReserved > 1 ? "s" : ""}</div>
+                  </dd>
+                </div>
+              </dl>
+
+              <div className="p-4 pb-3">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted">Documents soumis</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {carrier.documents.map((doc) => (
+                    <span
+                      key={doc.name}
+                      className={`max-w-full truncate rounded-md border px-2 py-0.5 text-[10px] font-semibold ${
+                        doc.alert ? "border-danger-line bg-danger-soft text-danger" : "border-line bg-surface text-ink"
+                      }`}
+                    >
+                      {doc.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 border-t border-line-subtle bg-sand/40 p-3 [&_button]:flex-1 [&_button]:py-2.5">
+                <VerificationActions carrier={carrier} />
+                <Link href="/documents" className="flex-1 rounded-lg border border-line bg-surface px-2.5 py-2.5 text-center text-xs font-bold text-ink transition-colors hover:bg-sand">
+                  Documents
+                </Link>
+              </div>
+            </article>
+          );
+        })}
+        <p className="px-1 text-center text-xs text-muted">{rows.length} sur {carriers.length} fiches affichées</p>
+      </div>
+
+      <div className="hidden overflow-hidden rounded-card border border-line bg-surface shadow-card md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs min-w-[960px]">
             <thead>
-              <tr className="bg-dark-card text-white font-semibold">
+              <tr className="bg-dark-card text-[11px] font-semibold uppercase tracking-wider text-white/90">
                 <th scope="col" className="py-3.5 px-5">Transporteur</th>
                 <th scope="col" className="py-3.5 px-5">Téléphone & Zone</th>
                 <th scope="col" className="py-3.5 px-5">Profil & Jetons</th>
@@ -169,8 +230,6 @@ export function TransporteursPage() {
           {rows.length} sur {carriers.length} fiches affichées
         </p>
       </div>
-
-      <BorderControlCard />
     </>
   );
 }

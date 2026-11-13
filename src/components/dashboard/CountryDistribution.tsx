@@ -21,19 +21,37 @@ const rows = customersByCountry.map((country) => {
 
 const maxAmount = Math.max(...rows.map((row) => row.amountFcfa));
 
-/** Une seule teinte, plus intense quand le montant des achats est élevé. */
+const COUNTRY_COLORS: Record<CountryCode, string> = {
+  CMR: "#10B981",
+  TCHAD: "#F5B301",
+  RCA: "#4F6BED",
+};
+
+/** Une teinte par pays, plus intense quand le montant des achats est élevé. */
 function fillOpacityFor(amountFcfa: number) {
-  return 0.2 + 0.65 * (amountFcfa / maxAmount);
+  return 0.5 + 0.45 * (amountFcfa / maxAmount);
 }
 
 export function CountryDistribution() {
   const [active, setActive] = useState<CountryCode | null>(null);
 
   return (
-    <section className="bg-surface border border-line rounded-card overflow-hidden shadow-card">
-      <div className="p-5 sm:px-6 border-b border-line-subtle">
-        <h2 className="text-base font-bold text-ink">Utilisateurs & rentabilité par pays</h2>
-        <p className="text-xs text-muted mt-0.5">Cameroun, Centrafrique et Tchad</p>
+    <section className="relative bg-surface border border-line rounded-card overflow-hidden shadow-card">
+      <div className="p-5 sm:px-6 border-b border-line-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-base font-bold text-ink">Utilisateurs & rentabilité par pays</h2>
+          <p className="text-xs text-muted mt-0.5">Cameroun, Centrafrique et Tchad</p>
+        </div>
+        <div className="flex gap-2.5">
+          <div className="rounded-xl border border-line-subtle bg-sand/60 px-3 py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Utilisateurs</p>
+            <p className="text-sm font-extrabold text-ink tabular-nums">{formatNumber(countryTotals.users)}</p>
+          </div>
+          <div className="rounded-xl border border-line-subtle bg-sand/60 px-3 py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Achats</p>
+            <p className="text-sm font-extrabold text-ink tabular-nums">{formatFcfa(countryTotals.amountFcfa)}</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
@@ -48,12 +66,16 @@ export function CountryDistribution() {
               <path
                 key={row.code}
                 d={CEMAC_MAP_SHAPES[row.code].d}
-                fill="var(--accent)"
-                fillOpacity={fillOpacityFor(row.amountFcfa) + (active === row.code ? 0.15 : 0)}
+                fill={COUNTRY_COLORS[row.code]}
+                fillOpacity={Math.min(1, fillOpacityFor(row.amountFcfa) + (active === row.code ? 0.1 : 0))}
                 stroke="var(--bg-surface)"
-                strokeWidth={2}
+                strokeWidth={active === row.code ? 4 : 2}
                 strokeLinejoin="round"
-                className="cursor-pointer transition-[fill-opacity] duration-150"
+                className="cursor-pointer transition-all duration-200"
+                style={{
+                  opacity: active && active !== row.code ? 0.45 : 1,
+                  filter: active === row.code ? `drop-shadow(0 0 12px ${COUNTRY_COLORS[row.code]}88)` : "none",
+                }}
                 onMouseEnter={() => setActive(row.code)}
                 onMouseLeave={() => setActive(null)}
               />
@@ -83,20 +105,48 @@ export function CountryDistribution() {
               );
             })}
           </svg>
-          <figcaption className="mt-3 flex items-center justify-center gap-2 text-[11px] text-muted">
-            <span>Montant des achats</span>
-            <span
-              className="h-2 w-16 rounded-full"
-              style={{ background: "linear-gradient(90deg, rgb(253 79 73 / 0.25), rgb(253 79 73 / 0.85))" }}
-            />
-            <span>élevé</span>
+          <figcaption className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] text-muted">
+            {rows.map((row) => (
+              <span key={row.code} className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COUNTRY_COLORS[row.code] }} />
+                {row.name}
+              </span>
+            ))}
           </figcaption>
         </figure>
 
-        <div className="overflow-x-auto">
+        <div className="md:hidden">
+          <ul className="divide-y divide-line-subtle border-t border-line-subtle">
+            {rows.map((row) => (
+              <li key={row.code} className="space-y-2.5 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-2.5">
+                    <span className="h-8 w-1 rounded-full" style={{ backgroundColor: COUNTRY_COLORS[row.code] }} aria-hidden="true" />
+                    <span className="text-lg" aria-hidden="true">{row.flag}</span>
+                    <span className="text-sm font-bold text-ink">{row.name}</span>
+                  </span>
+                  <span className="text-sm font-extrabold text-ink tabular-nums">{formatFcfa(row.amountFcfa)}</span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-line-subtle">
+                  <div className="h-full rounded-full" style={{ width: `${row.revenueShare}%`, backgroundColor: COUNTRY_COLORS[row.code] }} />
+                </div>
+                <dl className="grid grid-cols-3 gap-2 text-[11px]">
+                  <div><dt className="text-muted">Utilisateurs</dt><dd className="font-bold text-ink tabular-nums">{formatNumber(row.users)}</dd></div>
+                  <div><dt className="text-muted">Jetons</dt><dd className="font-bold text-ink tabular-nums">{formatNumber(row.tokensPurchased)}</dd></div>
+                  <div><dt className="text-muted">Part du CA</dt><dd className="font-bold text-ink tabular-nums">{formatPercent(row.revenueShare)}</dd></div>
+                </dl>
+              </li>
+            ))}
+          </ul>
+          <p className="border-t border-line-subtle px-4 py-3 text-[11px] text-muted">
+            Rentabilité moyenne : {formatFcfa(Math.round(countryTotals.amountFcfa / countryTotals.users))} par utilisateur. Données de démonstration.
+          </p>
+        </div>
+
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-left text-xs min-w-[640px]">
             <thead>
-              <tr className="bg-dark-card text-white font-semibold">
+              <tr className="bg-dark-card text-[11px] font-semibold uppercase tracking-wider text-white/90">
                 <th scope="col" className="py-3.5 px-5">Pays</th>
                 <th scope="col" className="py-3.5 px-4 text-right">Utilisateurs</th>
                 <th scope="col" className="py-3.5 px-4 text-right">Jetons achetés</th>
@@ -105,16 +155,17 @@ export function CountryDistribution() {
                 <th scope="col" className="py-3.5 px-5 text-right">Rentabilité</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-line/70">
+            <tbody className="divide-y divide-line-subtle">
               {rows.map((row) => (
                 <tr
                   key={row.code}
                   onMouseEnter={() => setActive(row.code)}
                   onMouseLeave={() => setActive(null)}
-                  className={`transition-colors ${active === row.code ? "bg-accent-soft/60" : ""}`}
+                  className={`transition-colors ${active === row.code ? "bg-sand" : ""}`}
                 >
                   <td className="py-4 px-5">
                     <div className="flex items-center gap-2.5">
+                      <span className="h-8 w-1 rounded-full" style={{ backgroundColor: COUNTRY_COLORS[row.code] }} aria-hidden="true" />
                       <span className="text-lg" aria-hidden="true">{row.flag}</span>
                       <span className="font-bold text-ink">{row.name}</span>
                     </div>
@@ -127,7 +178,12 @@ export function CountryDistribution() {
                   </td>
                   <td className="py-4 px-4 text-right tabular-nums text-ink">{formatNumber(row.tokensPurchased)}</td>
                   <td className="py-4 px-4 text-right tabular-nums font-bold text-ink whitespace-nowrap">{formatFcfa(row.amountFcfa)}</td>
-                  <td className="py-4 px-4 text-right tabular-nums text-ink">{formatPercent(row.revenueShare)}</td>
+                  <td className="py-4 px-4 text-right">
+                    <div className="font-semibold tabular-nums text-ink">{formatPercent(row.revenueShare)}</div>
+                    <div className="ml-auto mt-1 h-1.5 w-20 overflow-hidden rounded-full bg-line-subtle">
+                      <div className="h-full rounded-full" style={{ width: `${row.revenueShare}%`, backgroundColor: COUNTRY_COLORS[row.code] }} />
+                    </div>
+                  </td>
                   <td className="py-4 px-5 text-right whitespace-nowrap">
                     <div className="font-bold text-ink tabular-nums">{formatFcfa(row.revenuePerUser)}</div>
                     <div className="text-[11px] text-muted">par utilisateur</div>

@@ -44,7 +44,7 @@ export function DocumentsPage() {
         title="Analyse & Validation des Documents Transporteurs"
         description="Contrôle biométrique, cartes grises CEMAC, permis lourds et assurances inter-états (RCA • Cameroun • Tchad)"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <div className="px-3.5 py-2 rounded-xl border border-line bg-surface text-xs font-semibold text-ink shadow-2xs">
             En attente : <span className="font-bold text-accent">12 pièces</span>
           </div>
@@ -73,13 +73,13 @@ export function DocumentsPage() {
           ))}
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="grid grid-cols-1 sm:flex sm:flex-wrap sm:items-center gap-2 [&_select]:w-full sm:[&_select]:w-auto [&_select]:py-2">
           <select
             value={selectedCountry}
             onChange={(e) => setSelectedCountry(e.target.value)}
             className="px-3 py-1.5 bg-surface border border-line rounded-xl text-xs font-bold text-ink focus:outline-none focus:border-accent"
           >
-            <option value="Tous">Tous les pays (CMR • RCA • TCHAD)</option>
+            <option value="Tous">Tous les pays</option>
             <option value="CMR">🇨🇲 Cameroun (CMR)</option>
             <option value="RCA">🇨🇫 Centrafrique (RCA)</option>
             <option value="TCHAD">🇹🇩 Tchad (TCHAD)</option>
@@ -116,8 +116,8 @@ export function DocumentsPage() {
         {/* Left: Documents Table */}
         <div className={isInspectorOpen ? "lg:col-span-7 space-y-4" : "lg:col-span-12 space-y-4"}>
           <div className="bg-surface border border-line/90 rounded-card overflow-hidden shadow-card">
-            <div className="p-4 px-6 border-b border-line bg-sand/30 flex items-center justify-between">
-              <div className="relative flex-1 max-w-sm">
+            <div className="p-3 sm:px-6 sm:py-4 border-b border-line bg-sand/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div className="relative w-full sm:flex-1 sm:max-w-sm">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-faint">
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="11" cy="11" r="8" />
@@ -126,22 +126,66 @@ export function DocumentsPage() {
                 </span>
                 <input
                   type="text"
-                  placeholder="Chercher par chauffeur, n° document, plaque..."
+                  placeholder="Chauffeur, n° document, plaque..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-9 pr-3 py-1.5 bg-surface border border-line rounded-xl text-xs text-ink placeholder-faint focus:outline-none focus:border-accent"
                 />
               </div>
 
-              <span className="text-xs font-bold text-muted">
+              <span className="text-xs font-bold text-muted shrink-0">
                 {filteredDocs.length} documents répertoriés
               </span>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Mobile : cartes de documents */}
+            <ul className="divide-y divide-line-subtle md:hidden">
+              {filteredDocs.length === 0 && <li className="p-8 text-center text-xs text-muted">Aucun document pour ces filtres.</li>}
+              {filteredDocs.map((doc) => {
+                const isSelected = activeDoc.id === doc.id;
+                return (
+                  <li key={doc.id}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveDoc(doc);
+                        setIsInspectorOpen(true);
+                        window.setTimeout(() => document.getElementById("doc-inspector")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                      }}
+                      className={`block w-full space-y-2.5 p-4 text-left transition-colors ${isSelected ? "bg-accent-soft/50 shadow-[inset_3px_0_0_var(--accent)]" : "active:bg-sand"}`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-dark-card text-xs font-bold text-white ring-1 ring-line">{doc.carrierAvatar}</span>
+                          <span className="min-w-0">
+                            <span className="block truncate text-xs font-bold text-ink">{doc.carrierName} {doc.countryFlag}</span>
+                            <span className="block truncate text-[10.5px] text-muted">{doc.company}</span>
+                          </span>
+                        </div>
+                        <StatusPill label={doc.status} tone={doc.statusTone} size="sm" />
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="truncate text-xs font-bold text-ink">{doc.documentType}</div>
+                          <div className="mt-0.5 flex items-center gap-2">
+                            <span className="rounded border border-line bg-sand px-1.5 py-px text-[9.5px] font-bold text-muted">{doc.documentCategory}</span>
+                            <span className="truncate font-mono text-[10.5px] font-bold text-ink">{doc.documentNumber}</span>
+                          </div>
+                        </div>
+                        <span className={`shrink-0 text-right text-[10px] font-bold ${doc.expiryDate.includes("Expiré") ? "text-danger" : "text-muted"}`}>
+                          Expire le<br />{doc.expiryDate}
+                        </span>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="bg-dark-card text-white font-semibold">
+                  <tr className="bg-dark-card text-[11px] font-semibold uppercase tracking-wider text-white/90">
                     <th className="py-3.5 px-5">Transporteur</th>
                     <th className="py-3.5 px-5">Pièce & Catégorie</th>
                     <th className="py-3.5 px-5">Numéro & Validité</th>
@@ -227,7 +271,7 @@ export function DocumentsPage() {
 
         {/* Right: Split-Screen Inspector */}
         {isInspectorOpen && (
-          <div className="lg:col-span-5 bg-surface border border-line/90 rounded-card p-6 shadow-card space-y-6 sticky top-24">
+          <div id="doc-inspector" className="lg:col-span-5 scroll-mt-4 bg-surface border border-line/90 rounded-card p-4 sm:p-6 shadow-card space-y-5 sm:space-y-6 lg:sticky lg:top-24">
             <div className="flex items-center justify-between pb-3 border-b border-line-subtle">
               <div>
                 <span className="text-[10px] font-bold text-accent uppercase tracking-wider">
@@ -260,7 +304,7 @@ export function DocumentsPage() {
                 {activeDoc.fileSize}
               </p>
 
-              <div className="mt-4 flex items-center gap-2">
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
                   className="px-3 py-1 rounded-lg bg-surface border border-line hover:bg-sand text-xs font-bold text-ink shadow-2xs transition"
@@ -283,17 +327,17 @@ export function DocumentsPage() {
               </h4>
 
               <div className="space-y-2 text-xs">
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-sand/50 border border-line-subtle">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 p-2.5 rounded-xl bg-sand/50 border border-line-subtle">
                   <span className="font-semibold text-ink">Plaque & Jauge Essieu</span>
                   <span className="font-bold text-success">✓ Certifié conforme</span>
                 </div>
 
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-sand/50 border border-line-subtle">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 p-2.5 rounded-xl bg-sand/50 border border-line-subtle">
                   <span className="font-semibold text-ink">Filigrane CEMAC & Sceau Sécurité</span>
                   <span className="font-bold text-success">✓ Authentique</span>
                 </div>
 
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-sand/50 border border-line-subtle">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 p-2.5 rounded-xl bg-sand/50 border border-line-subtle">
                   <span className="font-semibold text-ink">Police d’Assurance Frontalière</span>
                   <span className={activeDoc.expiryDate.includes("Expiré") ? "font-bold text-danger" : "font-bold text-success"}>
                     {activeDoc.expiryDate.includes("Expiré") ? "✕ Date dépassée" : "✓ Active"}
@@ -308,7 +352,7 @@ export function DocumentsPage() {
 
             {/* Validation Actions Console */}
             <div className="pt-3 border-t border-line-subtle space-y-2">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch gap-2">
                 <button
                   type="button"
                   className="flex-1 py-2.5 px-3 rounded-xl bg-success hover:brightness-95 text-white text-xs font-bold shadow-xs transition active:scale-95"

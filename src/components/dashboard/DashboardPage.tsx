@@ -8,7 +8,7 @@ import { CountryDistribution } from "@/components/dashboard/CountryDistribution"
 import { useCarriers } from "@/lib/carrier-store";
 import { formatFcfa, formatNumber } from "@/lib/format";
 import { TOKEN_PRICE_FCFA } from "@/lib/constants";
-import { countryTotals, overviewStats } from "@/lib/mock-data/overview";
+import { countryTotals, customersByCountry, overviewStats } from "@/lib/mock-data/overview";
 import { auditEvents } from "@/lib/mock-data/audit";
 
 export function DashboardPage() {
@@ -23,19 +23,27 @@ export function DashboardPage() {
       tone: "warning" as const,
       icon: "users",
       subtext: `${formatNumber(countryTotals.carriers)} transporteurs, ${formatNumber(countryTotals.shippers)} chargeurs`,
+      extraRight: `${Math.round((countryTotals.carriers / countryTotals.users) * 100)} % transp.`,
+      progressPercent: (countryTotals.carriers / countryTotals.users) * 100,
+      sparkColor: "#F59E0B",
     },
-    ...overviewStats,
+    ...overviewStats.map((stat, index) => ({ ...stat, sparkColor: ["#4F6BED", "#8B5CF6", "#10B981"][index] })),
     {
       label: "Jetons achetés",
       value: formatNumber(countryTotals.tokensPurchased),
       icon: "gift",
       subtext: `1 jeton = ${formatFcfa(TOKEN_PRICE_FCFA)}`,
+      extraRight: `${formatNumber(Math.round(countryTotals.tokensPurchased / countryTotals.users * 10) / 10)} / util.`,
+      progressPercent: (customersByCountry[0].tokensPurchased / countryTotals.tokensPurchased) * 100,
+      sparkColor: "#FD4F49",
     },
     {
       label: "Montant des achats",
       value: formatFcfa(countryTotals.amountFcfa),
       icon: "shield",
       subtext: "Cumul des packs de jetons",
+      extraRight: `${formatFcfa(Math.round(countryTotals.amountFcfa / countryTotals.users))} / util.`,
+      sparkColor: "#06B6D4",
     },
   ];
 
@@ -94,7 +102,7 @@ export function DashboardPage() {
 
       {/* Section 4: Journal des événements & Audit */}
       <div className="bg-surface border border-line/90 rounded-card overflow-hidden shadow-card">
-        <div className="p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-line">
+        <div className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-line">
           <div>
             <h2 className="text-base font-bold text-ink">
               Journal des événements & Journal d’Audit
@@ -104,7 +112,7 @@ export function DashboardPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="grid grid-cols-2 sm:flex items-center gap-2.5 [&_button]:justify-center">
             <button
               type="button"
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-line text-xs font-semibold text-ink hover:bg-sand transition shadow-2xs"
@@ -128,10 +136,37 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <ul className="divide-y divide-line-subtle md:hidden">
+          {auditEvents.map((evt, idx) => (
+            <li key={idx} className="space-y-2.5 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className={`text-xs font-bold ${evt.typeAlert ? "text-danger" : "text-ink"}`}>{evt.type}</div>
+                  <div className="text-[10px] text-muted">{evt.timestamp}</div>
+                </div>
+                <StatusPill label={evt.status} tone={evt.tone} size="sm" />
+              </div>
+              <div className="text-[11px]">
+                <div className="font-bold text-ink">{evt.entity}</div>
+                {evt.entitySub && <div className="text-muted">{evt.entitySub}</div>}
+                <div className="mt-0.5 font-medium text-muted">{evt.corridor}</div>
+              </div>
+              <button
+                type="button"
+                className={`w-full rounded-lg py-2.5 text-xs font-bold transition ${
+                  evt.actionHighlight ? "bg-accent text-white active:scale-[0.99]" : "border border-line bg-surface text-accent hover:bg-sand"
+                }`}
+              >
+                {evt.action}
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="bg-dark-card text-white font-semibold">
+              <tr className="bg-dark-card text-[11px] font-semibold uppercase tracking-wider text-white/90">
                 <th className="py-3.5 px-6">Horodatage</th>
                 <th className="py-3.5 px-6">Type d’événement</th>
                 <th className="py-3.5 px-6">Entité concernée</th>
@@ -140,9 +175,9 @@ export function DashboardPage() {
                 <th className="py-3.5 px-6 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-line/70">
+            <tbody className="divide-y divide-line-subtle">
               {auditEvents.map((evt, idx) => (
-                <tr key={idx} className="hover:bg-sand/70 transition-colors group">
+                <tr key={idx} className="group transition-colors hover:bg-accent-soft/40 even:bg-sand/30">
                   <td className="py-4 px-6 font-bold text-ink whitespace-nowrap">
                     {evt.timestamp}
                   </td>
@@ -189,7 +224,7 @@ export function DashboardPage() {
         <div className="p-4 px-6 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted bg-sand/20">
           <span>Affichage de 1 à 5 sur 284 entrées de télémétrie</span>
 
-          <div className="flex items-center gap-1.5 font-bold">
+          <div className="flex flex-wrap items-center justify-center gap-1.5 font-bold">
             <button type="button" className="px-3 py-1.5 rounded-lg border border-line text-faint hover:bg-sand" disabled>
               Précédent
             </button>

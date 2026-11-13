@@ -10,6 +10,9 @@ interface StatCardProps {
   subtext?: string;
   extraRight?: string;
   progressPercent?: number;
+  /** Série de points tracée en mini-courbe sous la valeur. */
+  sparkline?: number[];
+  sparkColor?: string;
 }
 
 const ICONS: Record<string, { className: string; path: ReactNode }> = {
@@ -95,7 +98,31 @@ const DELTA_STYLES: Record<StatusTone, string> = {
   neutral: "bg-sand text-muted border-line",
 };
 
-export function StatCard({ label, value, delta, tone = "neutral", icon, subtext, extraRight, progressPercent }: StatCardProps) {
+function Sparkline({ points, color }: { points: number[]; color: string }) {
+  if (points.length < 2) return null;
+  const max = Math.max(...points, 1);
+  const W = 120;
+  const H = 36;
+  const coords = points.map((value, index) => [(index / (points.length - 1)) * W, H - 3 - (value / max) * (H - 8)]);
+  const line = coords.map(([x, y], index) => `${index === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
+  const gradientId = `spark-${color.replace(/[^a-z0-9]/gi, "")}`;
+  const [lastX, lastY] = coords[coords.length - 1];
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-9 w-full overflow-visible" aria-hidden="true">
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.28" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={`${line} L${W} ${H} L0 ${H}Z`} fill={`url(#${gradientId})`} />
+      <path d={line} fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      <circle cx={lastX} cy={lastY} r="2.4" fill={color} stroke="var(--bg-surface)" strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+}
+
+export function StatCard({ label, value, delta, tone = "neutral", icon, subtext, extraRight, progressPercent, sparkline, sparkColor = "var(--accent)" }: StatCardProps) {
   const iconConfig = icon ? ICONS[icon] : undefined;
 
   return (
@@ -122,10 +149,12 @@ export function StatCard({ label, value, delta, tone = "neutral", icon, subtext,
         </div>
       </div>
 
+      {sparkline && sparkline.length > 1 && <div className="pb-2.5"><Sparkline points={sparkline} color={sparkColor} /></div>}
+
       <div className="space-y-2 pt-2 border-t border-line-subtle">
         {progressPercent !== undefined && (
           <div className="w-full bg-line-subtle h-1.5 rounded-full overflow-hidden">
-            <div className="bg-accent h-full rounded-full" style={{ width: `${progressPercent}%` }} />
+            <div className="h-full rounded-full" style={{ width: `${progressPercent}%`, backgroundColor: sparkColor }} />
           </div>
         )}
         <div className="flex items-center justify-between text-[11px] text-muted">

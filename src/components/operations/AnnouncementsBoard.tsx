@@ -60,15 +60,77 @@ export function AnnouncementsBoard({
 
   return (
     <div className="bg-surface border border-line rounded-card overflow-hidden shadow-card">
-      <div className="p-4 px-6 border-b border-line flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+      <div className="p-3 sm:p-4 sm:px-6 border-b border-line flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <FilterTabs tabs={tabs} active={filter} onChange={setFilter} />
         <SearchInput value={search} onChange={setSearch} placeholder={searchPlaceholder} />
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Mobile : une carte par annonce */}
+      <ul className="divide-y divide-line-subtle md:hidden">
+        {rows.length === 0 && <li className="p-8 text-center text-xs text-muted">Aucune annonce pour ces filtres.</li>}
+        {rows.map((item) => (
+          <li key={item.id} className="space-y-3 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-ink">{item.id}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted">{item.type} · {item.timeAgo}</div>
+              </div>
+              <StatusPill label={item.status} tone={item.statusTone} size="sm" />
+            </div>
+
+            <div className="rounded-xl border border-line-subtle bg-sand/50 p-3">
+              <div className="flex flex-wrap items-center gap-x-1.5 text-sm font-bold text-ink">
+                <span>{item.origin}</span>
+                <span className="text-accent">→</span>
+                <span>{item.destination}</span>
+              </div>
+              <div className="mt-0.5 text-[11px] text-muted">{item.distance} • {item.via}</div>
+            </div>
+
+            <dl className="grid grid-cols-2 gap-3 text-[11px]">
+              <div>
+                <dt className="text-[10px] font-semibold uppercase tracking-wider text-muted">Tonnage</dt>
+                <dd className="mt-0.5 font-bold text-ink">{item.tonnage}</dd>
+                <dd className="text-muted">{item.details}</dd>
+              </div>
+              <div>
+                <dt className="text-[10px] font-semibold uppercase tracking-wider text-muted">{ownerLabel}</dt>
+                <dd className="mt-0.5 font-bold text-ink">{item.owner}</dd>
+                <dd className="text-muted">{item.ownerSub}</dd>
+              </div>
+            </dl>
+
+            <div className="flex items-center justify-between gap-3 border-t border-line-subtle pt-3">
+              <div className="text-[11px]">
+                <span className="font-semibold text-ink">{item.createdDate}</span>
+                <span className={`ml-2 font-bold ${expiryClassName(item.expiry)}`}>{item.expiry}</span>
+              </div>
+              <div className="flex items-center gap-1 text-muted">
+                <RowAction title="Voir" hoverClassName="hover:bg-line-subtle hover:text-ink">
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </RowAction>
+                <RowAction title="Apparier" hoverClassName="hover:bg-line-subtle hover:text-accent">
+                  <polyline points="16 3 21 3 21 8" />
+                  <line x1="4" y1="20" x2="21" y2="3" />
+                  <polyline points="21 16 21 21 16 21" />
+                  <line x1="15" y1="15" x2="21" y2="21" />
+                </RowAction>
+                <RowAction title="Supprimer" hoverClassName="hover:bg-danger-soft hover:text-danger">
+                  <path d="M3 6h18" />
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                </RowAction>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full text-left text-xs min-w-[1040px]">
           <thead>
-            <tr className="bg-dark-card text-white font-semibold">
+            <tr className="bg-dark-card text-[11px] font-semibold uppercase tracking-wider text-white/90">
               <th scope="col" className="py-3.5 px-5">ID & Type</th>
               <th scope="col" className="py-3.5 px-5">Trajet & Corridor</th>
               <th scope="col" className="py-3.5 px-5">Tonnage & Détails</th>
@@ -81,7 +143,7 @@ export function AnnouncementsBoard({
           <tbody className="divide-y divide-line/70">
             {rows.length === 0 && <EmptyRow colSpan={7} label="Aucune annonce pour ces filtres." />}
             {rows.map((item) => (
-              <tr key={item.id} className="hover:bg-sand/70 transition-colors">
+              <tr key={item.id} className="hover:bg-accent-soft/40 transition-colors">
                 <td className="py-4 px-5 whitespace-nowrap">
                   <div className="font-bold text-ink">{item.id}</div>
                   <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">{item.type}</div>

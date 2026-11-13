@@ -47,7 +47,6 @@ function SettingsSection({ title, children }: { title: string; children: ReactNo
 export function SettingsPage() {
   const [settings, setSettings] = useState({
     tokenPrice: TOKEN_PRICE_FCFA,
-    signupTokens: 5,
     holdHours: 48,
     reviewDays: 14,
   });
@@ -82,7 +81,6 @@ export function SettingsPage() {
       <SettingsSection title="Jetons">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <NumberField label="Prix d'un jeton" unit="FCFA" value={settings.tokenPrice} onChange={update("tokenPrice")} />
-          <NumberField label="Dotation d'inscription" unit="jetons par utilisateur" value={settings.signupTokens} onChange={update("signupTokens")} />
         </div>
       </SettingsSection>
 

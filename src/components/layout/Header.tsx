@@ -1,6 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { signOut } from "@/lib/auth";
 import { ADMIN_ROLE_LABELS } from "@/lib/constants";
 import type { AdminRole } from "@/types";
 
@@ -8,6 +11,12 @@ import type { AdminRole } from "@/types";
 const CURRENT_ROLE: AdminRole = "super_admin";
 
 export function Header({ onMenuToggle }: { onMenuToggle: () => void }) {
+  const router = useRouter();
+  const logout = () => {
+    signOut();
+    router.replace("/login");
+  };
+
   return (
     <header className="h-[70px] shrink-0 sticky top-0 z-30 bg-surface/90 backdrop-blur-md border-b border-line px-4 sm:px-8 flex items-center justify-between">
       <div className="flex items-center gap-3 lg:hidden">
@@ -44,6 +53,7 @@ export function Header({ onMenuToggle }: { onMenuToggle: () => void }) {
       </div>
 
       <div className="flex items-center gap-2.5 sm:gap-4 ml-auto">
+        <ThemeToggle />
         <button
           type="button"
           className="relative p-2 rounded-xl text-muted hover:bg-sand hover:text-ink transition-colors"
@@ -65,6 +75,20 @@ export function Header({ onMenuToggle }: { onMenuToggle: () => void }) {
             <span className="block text-[10px] text-muted font-medium leading-tight mt-0.5">Back-office IBIGO</span>
           </span>
         </div>
+
+        <button
+          type="button"
+          onClick={logout}
+          aria-label="Se déconnecter"
+          title="Se déconnecter"
+          className="p-2 rounded-xl text-muted hover:bg-sand hover:text-danger transition-colors"
+        >
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+        </button>
       </div>
     </header>
   );
