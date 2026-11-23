@@ -101,11 +101,16 @@
 
   --radius-card: 18px;
   --shadow-card: 0 2px 8px rgb(30 36 43 / 0.04), 0 1px 2px rgb(30 36 43 / 0.02);
-  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: var(--font-body), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-heading), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 html {
   scroll-behavior: smooth;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-heading), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 body {

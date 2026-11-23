@@ -1,19 +1,44 @@
 "use client";
 
 import { PageHeader } from "@/components/ui/PageHeader";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { DateRangePicker, presetRange, type DateRange } from "@/components/ui/DateRangePicker";
 import { StatCard } from "@/components/ui/StatCard";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { CountryDistribution } from "@/components/dashboard/CountryDistribution";
 import { useCarriers } from "@/lib/carrier-store";
 import { formatFcfa, formatNumber } from "@/lib/format";
 import { TOKEN_PRICE_FCFA } from "@/lib/constants";
-import { countryTotals, customersByCountry, overviewStats } from "@/lib/mock-data/overview";
+import { countryTotals, overviewStats } from "@/lib/mock-data/overview";
 import { auditEvents } from "@/lib/mock-data/audit";
+import { PAYMENTS_NOW, payments } from "@/lib/mock-data/payments";
+
+// Les données de démonstration sont ancrées à cette date, qui joue le rôle d'« aujourd'hui ».
+const TODAY = new Date(PAYMENTS_NOW);
+
+const PERIOD_TABS = [
+  { label: "Aujourd'hui", days: 1 },
+  { label: "7J", days: 7 },
+  { label: "30J", days: 30 },
+  { label: "Trimestre", days: 90 },
+];
 
 export function DashboardPage() {
-  const [activeTab, setActiveTab] = useState("Aujourd'hui");
+  const [activeTab, setActiveTab] = useState<string | null>("Aujourd'hui");
+  const [range, setRange] = useState<DateRange>(() => presetRange(TODAY, 1));
   const { pendingCount } = useCarriers();
+
+  // Achats de jetons réussis sur la période choisie.
+  const period = useMemo(() => {
+    const sales = payments.filter(
+      (p) => p.status === "Réussi" && p.timestamp >= range.start.getTime() && p.timestamp <= range.end.getTime(),
+    );
+    return {
+      tokens: sales.reduce((sum, p) => sum + p.tokens, 0),
+      amountFcfa: sales.reduce((sum, p) => sum + p.amountFcfa, 0),
+      count: sales.length,
+    };
+  }, [range]);
 
   const kpis = [
     {
@@ -30,19 +55,19 @@ export function DashboardPage() {
     ...overviewStats.map((stat, index) => ({ ...stat, sparkColor: ["#4F6BED", "#8B5CF6", "#10B981"][index] })),
     {
       label: "Jetons achetés",
-      value: formatNumber(countryTotals.tokensPurchased),
+      value: formatNumber(period.tokens),
       icon: "gift",
-      subtext: `1 jeton = ${formatFcfa(TOKEN_PRICE_FCFA)}`,
-      extraRight: `${formatNumber(Math.round(countryTotals.tokensPurchased / countryTotals.users * 10) / 10)} / util.`,
-      progressPercent: (customersByCountry[0].tokensPurchased / countryTotals.tokensPurchased) * 100,
+      subtext: `Sur la période • 1 jeton = ${formatFcfa(TOKEN_PRICE_FCFA)}`,
+      extraRight: `${formatNumber(period.count)} achat${period.count > 1 ? "s" : ""}`,
+      progressPercent: (period.tokens / countryTotals.tokensPurchased) * 100,
       sparkColor: "#FD4F49",
     },
     {
       label: "Montant des achats",
-      value: formatFcfa(countryTotals.amountFcfa),
+      value: formatFcfa(period.amountFcfa),
       icon: "shield",
-      subtext: "Cumul des packs de jetons",
-      extraRight: `${formatFcfa(Math.round(countryTotals.amountFcfa / countryTotals.users))} / util.`,
+      subtext: "Packs de jetons sur la période",
+      extraRight: `${formatFcfa(period.count ? Math.round(period.amountFcfa / period.count) : 0)} / achat`,
       sparkColor: "#06B6D4",
     },
   ];
@@ -58,35 +83,34 @@ export function DashboardPage() {
         {/* Date Filters & Calendar Picker */}
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="flex bg-line-subtle/80 p-1 rounded-xl text-xs font-semibold border border-line/60 shadow-2xs">
-            {["Aujourd'hui", "7J", "30J", "Trimestre"].map((tab) => (
+            {PERIOD_TABS.map((tab) => (
               <button
-                key={tab}
+                key={tab.label}
                 type="button"
-                onClick={() => setActiveTab(tab)}
+                aria-pressed={activeTab === tab.label}
+                onClick={() => {
+                  setActiveTab(tab.label);
+                  setRange(presetRange(TODAY, tab.days));
+                }}
                 className={`px-3 sm:px-3.5 py-1.5 rounded-lg transition-all duration-200 ${
-                  activeTab === tab
+                  activeTab === tab.label
                     ? "bg-dark-card text-white shadow-xs font-bold"
                     : "text-muted hover:text-ink"
                 }`}
               >
-                {tab}
+                {tab.label}
               </button>
             ))}
           </div>
 
-          <button
-            type="button"
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-line bg-surface text-xs font-semibold text-ink hover:bg-sand hover:border-faint shadow-2xs transition-all"
-          >
-            <svg className="w-3.5 h-3.5 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-              <line x1="16" y1="2" x2="16" y2="6" />
-              <line x1="8" y1="2" x2="8" y2="6" />
-              <line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
-            <span className="hidden xs:inline">24 Oct 2024 - 31 Oct 2024</span>
-            <span className="xs:hidden">Oct 2024</span>
-          </button>
+          <DateRangePicker
+            value={range}
+            max={TODAY}
+            onChange={(next) => {
+              setRange(next);
+              setActiveTab(null);
+            }}
+          />
         </div>
       </PageHeader>
 

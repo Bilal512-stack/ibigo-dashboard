@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { PolarFlowsChart, WeeklyRevenueChart } from "@/components/tokens/FinanceCharts";
 import { PaymentsTable } from "@/components/tokens/PaymentsTable";
-import { ReservedTokensPanel } from "@/components/tokens/ReservedTokensPanel";
 import { CountrySelect, FilterTabs } from "@/components/ui/FilterControls";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
@@ -125,8 +124,6 @@ export function TokensPage() {
       </div>
 
       <PaymentsTable payments={selection} />
-
-      <ReservedTokensPanel />
     </>
   );
 }

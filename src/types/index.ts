@@ -124,15 +124,3 @@ export interface Payment {
   amountFcfa: number;
   status: PaymentStatus;
 }
-
-export interface ReservedToken {
-  id: string;
-  holderName: string;
-  holderRole: "Transporteur" | "Chargeur";
-  holderPhone: string;
-  counterpart: string;
-  listing: string;
-  corridor: string;
-  /** Fin du délai de 48 h, en millisecondes (UTC). */
-  expiresAt: number;
-}

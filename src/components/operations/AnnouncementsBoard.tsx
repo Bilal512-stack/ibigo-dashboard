@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { EmptyRow, FilterTabs, SearchInput, matchesSearch } from "@/components/ui/FilterControls";
+import { DetailsDialog } from "@/components/ui/DetailsDialog";
 import { StatusPill } from "@/components/ui/StatusPill";
 import type { Announcement } from "@/types";
 
@@ -14,9 +15,19 @@ const STATUS_TABS: { value: Exclude<StatusFilter, "all">; label: string }[] = [
   { value: "Expiré", label: "Expirées" },
 ];
 
-function RowAction({ title, hoverClassName, children }: { title: string; hoverClassName: string; children: ReactNode }) {
+function RowAction({
+  title,
+  hoverClassName,
+  onClick,
+  children,
+}: {
+  title: string;
+  hoverClassName: string;
+  onClick?: () => void;
+  children: ReactNode;
+}) {
   return (
-    <button type="button" title={title} aria-label={title} className={`p-1.5 rounded-lg transition-colors ${hoverClassName}`}>
+    <button type="button" title={title} aria-label={title} onClick={onClick} className={`p-1.5 rounded-lg transition-colors ${hoverClassName}`}>
       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         {children}
       </svg>
@@ -43,6 +54,7 @@ export function AnnouncementsBoard({
 }) {
   const [filter, setFilter] = useState<StatusFilter>(initialFilter);
   const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Announcement | null>(null);
 
   const tabs = [
     { value: "all" as StatusFilter, label: "Toutes", count: items.length },
@@ -106,7 +118,7 @@ export function AnnouncementsBoard({
                 <span className={`ml-2 font-bold ${expiryClassName(item.expiry)}`}>{item.expiry}</span>
               </div>
               <div className="flex items-center gap-1 text-muted">
-                <RowAction title="Voir" hoverClassName="hover:bg-line-subtle hover:text-ink">
+                <RowAction title="Voir les détails" hoverClassName="hover:bg-line-subtle hover:text-ink" onClick={() => setSelected(item)}>
                   <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
                   <circle cx="12" cy="12" r="3" />
                 </RowAction>
@@ -176,7 +188,7 @@ export function AnnouncementsBoard({
                 </td>
                 <td className="py-4 px-5">
                   <div className="flex items-center justify-end gap-1.5 text-muted">
-                    <RowAction title="Voir" hoverClassName="hover:bg-line-subtle hover:text-ink">
+                    <RowAction title="Voir les détails" hoverClassName="hover:bg-line-subtle hover:text-ink" onClick={() => setSelected(item)}>
                       <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
                       <circle cx="12" cy="12" r="3" />
                     </RowAction>
@@ -202,6 +214,48 @@ export function AnnouncementsBoard({
       <p className="p-4 px-6 border-t border-line text-xs text-muted">
         {rows.length} sur {items.length} annonces affichées
       </p>
+
+      {selected && (
+        <DetailsDialog
+          title={`${selected.type} ${selected.id}`}
+          subtitle={`${selected.origin} → ${selected.destination}`}
+          status={{ label: selected.status, tone: selected.statusTone }}
+          onClose={() => setSelected(null)}
+          groups={[
+            {
+              title: "Trajet",
+              rows: [
+                { label: "Départ", value: selected.origin },
+                { label: "Destination", value: selected.destination },
+                { label: "Distance", value: selected.distance },
+                { label: "Axe", value: selected.via },
+              ],
+            },
+            {
+              title: selected.isCargo ? "Cargaison" : "Camion",
+              rows: [
+                { label: "Tonnage", value: selected.tonnage },
+                { label: "Détails", value: selected.details },
+              ],
+            },
+            {
+              title: ownerLabel,
+              rows: [
+                { label: "Nom", value: selected.owner },
+                { label: "Précisions", value: selected.ownerSub },
+              ],
+            },
+            {
+              title: "Publication",
+              rows: [
+                { label: "Créée le", value: selected.createdDate },
+                { label: "Publiée", value: selected.timeAgo },
+                { label: "Validité", value: selected.expiry },
+              ],
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }

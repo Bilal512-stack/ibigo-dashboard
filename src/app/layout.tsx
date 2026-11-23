@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Inter } from "next/font/google";
+import { Manrope, Outfit } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
+const fontBody = Manrope({ subsets: ["latin"], variable: "--font-body", display: "swap" });
+const fontHeading = Outfit({ subsets: ["latin"], variable: "--font-heading", display: "swap" });
 
 export const metadata: Metadata = {
   title: "IBIGO - Back-office d'administration",
@@ -16,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="fr" className={inter.variable} suppressHydrationWarning>
+    <html lang="fr" className={`${fontBody.variable} ${fontHeading.variable}`} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{

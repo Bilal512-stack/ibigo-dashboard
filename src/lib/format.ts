@@ -40,3 +40,8 @@ export function formatDateTime(timestamp: number): string {
 export function formatShortDate(timestamp: number): string {
   return shortDateFormat.format(timestamp);
 }
+
+/** Lien WhatsApp « click to chat » (sans API) vers un numéro, avec un message prérempli. */
+export function whatsappLink(phone: string, message: string) {
+  return `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
+}

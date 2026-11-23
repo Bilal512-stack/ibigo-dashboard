@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AnnouncementsBoard } from "@/components/operations/AnnouncementsBoard";
 import { EmptyRow, FilterTabs, SearchInput, matchesSearch } from "@/components/ui/FilterControls";
+import { DetailsDialog } from "@/components/ui/DetailsDialog";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
 import { StatusPill } from "@/components/ui/StatusPill";
@@ -24,6 +25,7 @@ const statuses: Mission["status"][] = ["Livrée", "Avis en attente", "Rompue"];
 export function CamionsMissionsPage() {
   const [filter, setFilter] = useState<MissionFilter>("all");
   const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Mission | null>(null);
 
   const tabs = [
     { value: "all" as MissionFilter, label: "Toutes", count: missions.length },
@@ -102,6 +104,18 @@ export function CamionsMissionsPage() {
                 <div className="flex items-center justify-between border-t border-line-subtle pt-3 text-[11px] text-muted">
                   <span>{mission.agreedDate} → {mission.closedDate}</span>
                   <span className="font-bold text-ink">{mission.rating ? `★ ${mission.rating} / 5` : "Sans note"}</span>
+                  <button
+                    type="button"
+                    title="Voir les détails"
+                    aria-label="Voir les détails"
+                    onClick={() => setSelected(mission)}
+                    className="rounded-lg p-1.5 text-muted transition-colors hover:bg-line-subtle hover:text-ink"
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  </button>
                 </div>
               </li>
             ))}
@@ -118,10 +132,11 @@ export function CamionsMissionsPage() {
                   <th scope="col" className="py-3.5 px-5 text-right">Mise en relation</th>
                   <th scope="col" className="py-3.5 px-5 text-right">Note</th>
                   <th scope="col" className="py-3.5 px-5">Statut</th>
+                  <th scope="col" className="py-3.5 px-5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line/70">
-                {rows.length === 0 && <EmptyRow colSpan={7} label="Aucune mission pour ces filtres." />}
+                {rows.length === 0 && <EmptyRow colSpan={8} label="Aucune mission pour ces filtres." />}
                 {rows.map((mission) => (
                   <tr key={mission.id} className="hover:bg-accent-soft/40 transition-colors">
                     <td className="py-4 px-5 whitespace-nowrap">
@@ -148,6 +163,20 @@ export function CamionsMissionsPage() {
                     <td className="py-4 px-5 whitespace-nowrap">
                       <StatusPill label={mission.status} tone={mission.statusTone} size="sm" />
                     </td>
+                    <td className="py-4 px-5 text-right">
+                      <button
+                      type="button"
+                      title="Voir les détails"
+                      aria-label="Voir les détails"
+                      onClick={() => setSelected(mission)}
+                      className="rounded-lg p-1.5 text-muted transition-colors hover:bg-line-subtle hover:text-ink"
+                  >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                  </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -155,6 +184,47 @@ export function CamionsMissionsPage() {
           </div>
         </div>
       </section>
+
+      {selected && (
+        <DetailsDialog
+          title={`Mission ${selected.id}`}
+          subtitle={`${selected.origin} → ${selected.destination}`}
+          status={{ label: selected.status, tone: selected.statusTone }}
+          onClose={() => setSelected(null)}
+          groups={[
+            {
+              title: "Mission",
+              rows: [
+                { label: "Marchandise", value: selected.cargo },
+                { label: "Départ", value: selected.origin },
+                { label: "Destination", value: selected.destination },
+              ],
+            },
+            {
+              title: "Parties",
+              rows: [
+                { label: "Transporteur", value: selected.carrier },
+                { label: "Chargeur", value: selected.shipper },
+              ],
+            },
+            {
+              title: "Calendrier",
+              rows: [
+                { label: "Accord conclu", value: selected.agreedDate },
+                { label: "Clôture", value: selected.closedDate },
+              ],
+            },
+            {
+              title: "Mise en relation",
+              rows: [
+                { label: "Jetons consommés", value: `${selected.tokensUsed} jetons` },
+                { label: "Valeur", value: formatFcfa(selected.tokensUsed * TOKEN_PRICE_FCFA) },
+                { label: "Note du chargeur", value: selected.rating ? `★ ${selected.rating} / 5` : "Sans note" },
+              ],
+            },
+          ]}
+        />
+      )}
     </>
   );
 }

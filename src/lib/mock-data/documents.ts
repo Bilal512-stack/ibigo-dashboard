@@ -35,7 +35,7 @@ export const carrierDocumentsQueue: CarrierDocument[] = [
     expiryDate: "20/10/2024 (Expiré)",
     fileSize: "1.8 MB (Photo numérisée)",
     status: "En attente",
-    statusTone: "danger",
+    statusTone: "warning",
     riskScore: "Critique",
     matchNotes: "Quittance de paiement expirée depuis 9 jours. Absence de cachet humide de la compagnie Sanlam.",
   },

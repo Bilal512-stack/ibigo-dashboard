@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { useState } from "react";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { carrierDocumentsQueue } from "@/lib/mock-data/documents";
+import { whatsappLink } from "@/lib/format";
 import type { CarrierDocument } from "@/types";
 
 export function DocumentsPage() {
@@ -46,7 +47,7 @@ export function DocumentsPage() {
       >
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <div className="px-3.5 py-2 rounded-xl border border-line bg-surface text-xs font-semibold text-ink shadow-2xs">
-            En attente : <span className="font-bold text-accent">12 pièces</span>
+            En attente : <span className="font-bold text-warning">12 pièces</span>
           </div>
           <div className="px-3.5 py-2 rounded-xl border border-line bg-surface text-xs font-semibold text-ink shadow-2xs">
             Conformité globale : <span className="font-bold text-success">94.2%</span>
@@ -320,36 +321,6 @@ export function DocumentsPage() {
               </div>
             </div>
 
-            {/* Carrier & Document Checklist */}
-            <div className="space-y-3">
-              <h4 className="text-xs font-bold text-ink uppercase tracking-wider">
-                Vérifications de Conformité
-              </h4>
-
-              <div className="space-y-2 text-xs">
-                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 p-2.5 rounded-xl bg-sand/50 border border-line-subtle">
-                  <span className="font-semibold text-ink">Plaque & Jauge Essieu</span>
-                  <span className="font-bold text-success">✓ Certifié conforme</span>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 p-2.5 rounded-xl bg-sand/50 border border-line-subtle">
-                  <span className="font-semibold text-ink">Filigrane CEMAC & Sceau Sécurité</span>
-                  <span className="font-bold text-success">✓ Authentique</span>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 p-2.5 rounded-xl bg-sand/50 border border-line-subtle">
-                  <span className="font-semibold text-ink">Police d’Assurance Frontalière</span>
-                  <span className={activeDoc.expiryDate.includes("Expiré") ? "font-bold text-danger" : "font-bold text-success"}>
-                    {activeDoc.expiryDate.includes("Expiré") ? "✕ Date dépassée" : "✓ Active"}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-warning-soft/70 border border-warning-line text-[11px] text-warning leading-relaxed">
-                <span className="font-bold">Observation audit :</span> {activeDoc.matchNotes}
-              </div>
-            </div>
-
             {/* Validation Actions Console */}
             <div className="pt-3 border-t border-line-subtle space-y-2">
               <div className="flex flex-col sm:flex-row items-stretch gap-2">
@@ -367,12 +338,14 @@ export function DocumentsPage() {
                 </button>
               </div>
 
-              <button
-                type="button"
-                className="w-full py-2 px-3 rounded-xl border border-line bg-sand hover:bg-surface text-xs font-semibold text-muted transition"
+              <a
+                href={whatsappLink(activeDoc.phone, `Bonjour ${activeDoc.carrierName}, bienvenue dans le centre d’assistance d’IBIGO. Nous avons besoin d’une quittance complémentaire pour votre document « ${activeDoc.documentType} » (${activeDoc.documentNumber}).`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex w-full items-center justify-center gap-2 py-2 px-3 rounded-xl border border-line bg-sand hover:bg-surface text-xs font-semibold text-muted transition"
               >
-                Demander une quittance complémentaire par SMS/WhatsApp
-              </button>
+                Demander une quittance complémentaire sur WhatsApp
+              </a>
             </div>
           </div>
         )}
