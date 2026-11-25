@@ -1,16 +1,15 @@
 "use client";
 
-import { PageHeader } from "@/components/ui/PageHeader";
 import { useMemo, useState } from "react";
-import { DateRangePicker, presetRange, type DateRange } from "@/components/ui/DateRangePicker";
-import { StatCard } from "@/components/ui/StatCard";
-import { StatusPill } from "@/components/ui/StatusPill";
+import { ActionCenter } from "@/components/dashboard/ActionCenter";
 import { CountryDistribution } from "@/components/dashboard/CountryDistribution";
+import { DateRangePicker, presetRange, type DateRange } from "@/components/ui/DateRangePicker";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { StatCard } from "@/components/ui/StatCard";
 import { useCarriers } from "@/lib/carrier-store";
 import { formatFcfa, formatNumber } from "@/lib/format";
 import { TOKEN_PRICE_FCFA } from "@/lib/constants";
 import { countryTotals, overviewStats } from "@/lib/mock-data/overview";
-import { auditEvents } from "@/lib/mock-data/audit";
 import { PAYMENTS_NOW, payments } from "@/lib/mock-data/payments";
 
 // Les données de démonstration sont ancrées à cette date, qui joue le rôle d'« aujourd'hui ».
@@ -124,153 +123,8 @@ export function DashboardPage() {
       {/* Répartition géographique */}
       <CountryDistribution />
 
-      {/* Section 4: Journal des événements & Audit */}
-      <div className="bg-surface border border-line/90 rounded-card overflow-hidden shadow-card">
-        <div className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-line">
-          <div>
-            <h2 className="text-base font-bold text-ink">
-              Journal des événements & Journal d’Audit
-            </h2>
-            <p className="text-xs text-muted mt-0.5">
-              Enregistrement temps réel des transactions, franchissements frontaliers et contrôles KYC
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 sm:flex items-center gap-2.5 [&_button]:justify-center">
-            <button
-              type="button"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-line text-xs font-semibold text-ink hover:bg-sand transition shadow-2xs"
-            >
-              <svg className="w-3.5 h-3.5 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-              </svg>
-              Filtrer
-            </button>
-            <button
-              type="button"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-line text-xs font-semibold text-ink hover:bg-sand transition shadow-2xs"
-            >
-              <svg className="w-3.5 h-3.5 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" x2="12" y1="15" y2="3" />
-              </svg>
-              Exporter CSV
-            </button>
-          </div>
-        </div>
-
-        <ul className="divide-y divide-line-subtle md:hidden">
-          {auditEvents.map((evt, idx) => (
-            <li key={idx} className="space-y-2.5 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className={`text-xs font-bold ${evt.typeAlert ? "text-danger" : "text-ink"}`}>{evt.type}</div>
-                  <div className="text-[10px] text-muted">{evt.timestamp}</div>
-                </div>
-                <StatusPill label={evt.status} tone={evt.tone} size="sm" />
-              </div>
-              <div className="text-[11px]">
-                <div className="font-bold text-ink">{evt.entity}</div>
-                {evt.entitySub && <div className="text-muted">{evt.entitySub}</div>}
-                <div className="mt-0.5 font-medium text-muted">{evt.corridor}</div>
-              </div>
-              <button
-                type="button"
-                className={`w-full rounded-lg py-2.5 text-xs font-bold transition ${
-                  evt.actionHighlight ? "bg-accent text-white active:scale-[0.99]" : "border border-line bg-surface text-accent hover:bg-sand"
-                }`}
-              >
-                {evt.action}
-              </button>
-            </li>
-          ))}
-        </ul>
-
-        <div className="hidden overflow-x-auto md:block">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="bg-dark-card text-[11px] font-semibold uppercase tracking-wider text-white/90">
-                <th className="py-3.5 px-6">Horodatage</th>
-                <th className="py-3.5 px-6">Type d’événement</th>
-                <th className="py-3.5 px-6">Entité concernée</th>
-                <th className="py-3.5 px-6">Corridor / Axe</th>
-                <th className="py-3.5 px-6">Statut & Gravité</th>
-                <th className="py-3.5 px-6 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line-subtle">
-              {auditEvents.map((evt, idx) => (
-                <tr key={idx} className="group transition-colors hover:bg-accent-soft/40 even:bg-sand/30">
-                  <td className="py-4 px-6 font-bold text-ink whitespace-nowrap">
-                    {evt.timestamp}
-                  </td>
-                  <td className="py-4 px-6 font-semibold">
-                    <span className={evt.typeAlert ? "text-danger font-bold" : "text-ink"}>
-                      {evt.type}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6">
-                    <div className="font-bold text-ink">{evt.entity}</div>
-                    {evt.entitySub && (
-                      <div className="text-[11px] text-muted mt-0.5">{evt.entitySub}</div>
-                    )}
-                  </td>
-                  <td className="py-4 px-6 text-muted whitespace-nowrap font-medium">
-                    {evt.corridor}
-                  </td>
-                  <td className="py-4 px-6">
-                    <StatusPill label={evt.status} tone={evt.tone} size="sm" />
-                  </td>
-                  <td className="py-4 px-6 text-right whitespace-nowrap">
-                    {evt.actionHighlight ? (
-                      <button
-                        type="button"
-                        className="px-3.5 py-1.5 bg-accent hover:brightness-110 text-white font-bold rounded-lg text-xs shadow-xs transition active:scale-95"
-                      >
-                        {evt.action}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="font-bold text-accent hover:underline"
-                      >
-                        {evt.action}
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="p-4 px-6 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted bg-sand/20">
-          <span>Affichage de 1 à 5 sur 284 entrées de télémétrie</span>
-
-          <div className="flex flex-wrap items-center justify-center gap-1.5 font-bold">
-            <button type="button" className="px-3 py-1.5 rounded-lg border border-line text-faint hover:bg-sand" disabled>
-              Précédent
-            </button>
-            <button type="button" className="px-3.5 py-1.5 rounded-lg bg-dark-card text-white font-bold shadow-xs">
-              1
-            </button>
-            <button type="button" className="px-3.5 py-1.5 rounded-lg border border-line hover:bg-surface transition">
-              2
-            </button>
-            <button type="button" className="px-3.5 py-1.5 rounded-lg border border-line hover:bg-surface transition">
-              3
-            </button>
-            <span className="px-1 text-faint">...</span>
-            <button type="button" className="px-3.5 py-1.5 rounded-lg border border-line hover:bg-surface transition">
-              28
-            </button>
-            <button type="button" className="px-3 py-1.5 rounded-lg border border-line hover:bg-surface transition">
-              Suivant
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Centre d'actions prioritaires */}
+      <ActionCenter />
     </>
   );
 }

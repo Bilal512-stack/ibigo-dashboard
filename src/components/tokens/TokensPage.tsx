@@ -12,11 +12,13 @@ import { formatFcfa, formatNumber, formatPercent } from "@/lib/format";
 import { PAYMENTS_NOW, payments } from "@/lib/mock-data/payments";
 import type { Payment } from "@/types";
 
-type Period = "30" | "90" | "190";
+type Period = "1" | "7" | "30" | "90" | "190";
 
 const PERIODS: { value: Period; label: string }[] = [
-  { value: "30", label: "30 jours" },
-  { value: "90", label: "90 jours" },
+  { value: "1", label: "Aujourd'hui" },
+  { value: "7", label: "7J" },
+  { value: "30", label: "30J" },
+  { value: "90", label: "Trimestre" },
   { value: "190", label: "Tout" },
 ];
 
@@ -24,7 +26,7 @@ const DAY_MS = 86_400_000;
 const OPERATORS = Object.keys(OPERATOR_COLORS);
 
 export function TokensPage() {
-  const [period, setPeriod] = useState<Period>("190");
+  const [period, setPeriod] = useState<Period>("1");
   const [country, setCountry] = useState("all");
   const [operator, setOperator] = useState("all");
 
