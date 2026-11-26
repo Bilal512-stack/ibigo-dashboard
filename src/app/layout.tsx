@@ -9,6 +9,11 @@ const fontHeading = Outfit({ subsets: ["latin"], variable: "--font-heading", dis
 export const metadata: Metadata = {
   title: "IBIGO - Back-office d'administration",
   description: "Panneau d'administration de la plateforme logistique IBIGO (CEMAC).",
+  icons: {
+    icon: "/favicon-ibigo.png?v=2",
+    shortcut: "/favicon-ibigo.png?v=2",
+    apple: "/favicon-ibigo.png?v=2",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

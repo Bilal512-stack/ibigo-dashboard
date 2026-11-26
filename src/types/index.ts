@@ -74,6 +74,7 @@ export interface Shipper extends PlatformUser {
 
 export interface Announcement {
   id: string;
+  timestamp: number;
   type: string;
   isCargo: boolean;
   timeAgo: string;
@@ -93,6 +94,7 @@ export interface Announcement {
 
 export interface Mission {
   id: string;
+  timestamp: number;
   cargo: string;
   carrier: string;
   shipper: string;

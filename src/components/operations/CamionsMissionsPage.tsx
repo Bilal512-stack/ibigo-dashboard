@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AnnouncementsBoard } from "@/components/operations/AnnouncementsBoard";
+import { startOfDay } from "@/components/ui/DateRangePicker";
 import { EmptyRow, FilterTabs, SearchInput, matchesSearch } from "@/components/ui/FilterControls";
 import { DetailsDialog } from "@/components/ui/DetailsDialog";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -10,33 +11,69 @@ import { StatusPill } from "@/components/ui/StatusPill";
 import { TOKEN_PRICE_FCFA } from "@/lib/constants";
 import { formatFcfa, formatNumber } from "@/lib/format";
 import { missions, truckAnnouncements } from "@/lib/mock-data/operations";
+import { PAYMENTS_NOW } from "@/lib/mock-data/payments";
 import type { Mission } from "@/types";
 
+type Period = "1" | "7" | "30" | "all";
 type MissionFilter = "all" | Mission["status"];
 
-const availableTrucks = truckAnnouncements.filter((truck) => truck.status === "Disponible").length;
-const delivered = missions.filter((mission) => mission.status === "Livrée").length;
-const rated = missions.filter((mission) => mission.rating !== undefined);
-const averageRating = rated.reduce((sum, mission) => sum + (mission.rating ?? 0), 0) / rated.length;
-const tokensUsed = missions.reduce((sum, mission) => sum + mission.tokensUsed, 0);
+const PERIODS: { value: Period; label: string }[] = [
+  { value: "1", label: "Aujourd'hui" },
+  { value: "7", label: "7J" },
+  { value: "30", label: "30J" },
+  { value: "all", label: "Tout" },
+];
 
+const DAY_MS = 86_400_000;
 const statuses: Mission["status"][] = ["Livrée", "Avis en attente", "Rompue"];
 
 export function CamionsMissionsPage() {
+  const [period, setPeriod] = useState<Period>("all");
   const [filter, setFilter] = useState<MissionFilter>("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Mission | null>(null);
 
+  const periodStart = useMemo(() => {
+    if (period === "all") return 0;
+    return period === "1"
+      ? startOfDay(new Date(PAYMENTS_NOW)).getTime()
+      : PAYMENTS_NOW - Number(period) * DAY_MS;
+  }, [period]);
+
+  const filteredTrucks = useMemo(
+    () =>
+      period === "all"
+        ? truckAnnouncements
+        : truckAnnouncements.filter((t) => t.timestamp >= periodStart && t.timestamp <= PAYMENTS_NOW),
+    [period, periodStart],
+  );
+
+  const filteredMissions = useMemo(
+    () =>
+      period === "all"
+        ? missions
+        : missions.filter((m) => m.timestamp >= periodStart && m.timestamp <= PAYMENTS_NOW),
+    [period, periodStart],
+  );
+
+  const availableTrucks = filteredTrucks.filter((truck) => truck.status === "Disponible").length;
+  const delivered = filteredMissions.filter((mission) => mission.status === "Livrée").length;
+  const rated = filteredMissions.filter((mission) => mission.rating !== undefined);
+  const averageRating = rated.length
+    ? rated.reduce((sum, mission) => sum + (mission.rating ?? 0), 0) / rated.length
+    : null;
+  const tokensUsed = filteredMissions.reduce((sum, mission) => sum + mission.tokensUsed, 0);
+
   const tabs = [
-    { value: "all" as MissionFilter, label: "Toutes", count: missions.length },
+    { value: "all" as MissionFilter, label: "Toutes", count: filteredMissions.length },
     ...statuses.map((status) => ({
       value: status as MissionFilter,
       label: status,
-      count: missions.filter((mission) => mission.status === status).length,
+      count: filteredMissions.filter((mission) => mission.status === status).length,
     })),
   ];
 
-  const rows = missions.filter(
+  const rows = filteredMissions.filter(
     (mission) =>
       (filter === "all" || mission.status === filter) &&
       matchesSearch(search, [mission.id, mission.carrier, mission.shipper, mission.origin, mission.destination]),
@@ -48,19 +85,41 @@ export function CamionsMissionsPage() {
         breadcrumb={["Opérations", "Camions & Missions"]}
         title="Camions disponibles & Missions effectuées"
         description="Offre de camions sur la bourse et historique des accords conclus"
-      />
+      >
+        <FilterTabs tabs={PERIODS} active={period} onChange={setPeriod} />
+      </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard label="Camions disponibles" value={formatNumber(availableTrucks)} icon="truck" subtext="Annonces ouvertes" />
-        <StatCard label="Missions livrées" value={formatNumber(delivered)} icon="shield" subtext={`Sur ${missions.length} accords`} />
-        <StatCard label="Note moyenne" value={`${averageRating.toFixed(1).replace(".", ",")} / 5`} icon="users" subtext={`${rated.length} avis chargeurs`} />
-        <StatCard label="Jetons consommés" value={formatNumber(tokensUsed)} icon="gift" subtext={formatFcfa(tokensUsed * TOKEN_PRICE_FCFA)} />
+        <StatCard
+          label="Camions disponibles"
+          value={formatNumber(availableTrucks)}
+          icon="truck"
+          subtext={`Sur ${filteredTrucks.length} annonce${filteredTrucks.length > 1 ? "s" : ""}`}
+        />
+        <StatCard
+          label="Missions livrées"
+          value={formatNumber(delivered)}
+          icon="shield"
+          subtext={`Sur ${filteredMissions.length} accord${filteredMissions.length > 1 ? "s" : ""}`}
+        />
+        <StatCard
+          label="Note moyenne"
+          value={averageRating !== null ? `${averageRating.toFixed(1).replace(".", ",")} / 5` : "—"}
+          icon="users"
+          subtext={`${rated.length} avis chargeur${rated.length > 1 ? "s" : ""}`}
+        />
+        <StatCard
+          label="Jetons consommés"
+          value={formatNumber(tokensUsed)}
+          icon="gift"
+          subtext={formatFcfa(tokensUsed * TOKEN_PRICE_FCFA)}
+        />
       </div>
 
       <section className="space-y-3">
         <h2 className="text-base font-bold text-ink">Camions disponibles</h2>
         <AnnouncementsBoard
-          items={truckAnnouncements}
+          items={filteredTrucks}
           initialFilter="Disponible"
           searchPlaceholder="ID, ville, transporteur..."
           ownerLabel="Transporteur"
@@ -165,17 +224,17 @@ export function CamionsMissionsPage() {
                     </td>
                     <td className="py-4 px-5 text-right">
                       <button
-                      type="button"
-                      title="Voir les détails"
-                      aria-label="Voir les détails"
-                      onClick={() => setSelected(mission)}
-                      className="rounded-lg p-1.5 text-muted transition-colors hover:bg-line-subtle hover:text-ink"
-                  >
-                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                  </button>
+                        type="button"
+                        title="Voir les détails"
+                        aria-label="Voir les détails"
+                        onClick={() => setSelected(mission)}
+                        className="rounded-lg p-1.5 text-muted transition-colors hover:bg-line-subtle hover:text-ink"
+                      >
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      </button>
                     </td>
                   </tr>
                 ))}
