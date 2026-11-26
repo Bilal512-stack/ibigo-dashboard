@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -44,50 +45,41 @@ export function DateRangePicker({
   const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
   const rootRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
 
-  /* Calcule la position du popover en tenant compte des bords du viewport */
+  /* Calcule la position du popover en l'alignant au bord droit du bouton et en le gardant dans le viewport */
   const computePosition = () => {
     if (!btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
-    const popupWidth = Math.min(304, window.innerWidth - 16); // 19rem = 304px, 8px margin each side
-    const spaceRight = window.innerWidth - rect.right;
-    const spaceLeft = rect.left;
+    const popupWidth = Math.min(304, window.innerWidth - 16);
+    const left = Math.max(8, Math.min(rect.right - popupWidth, window.innerWidth - popupWidth - 8));
+    const top = rect.bottom + 8;
 
-    let left: number;
-    if (spaceRight >= popupWidth) {
-      // Aligner à droite du bouton
-      left = rect.right - popupWidth;
-    } else if (spaceLeft >= popupWidth) {
-      // Aligner à gauche du bouton
-      left = rect.left;
-    } else {
-      // Centrer dans le viewport
-      left = Math.max(8, (window.innerWidth - popupWidth) / 2);
-    }
-
-    const top = rect.bottom + 8 + window.scrollY;
-
-    setPopupStyle({ position: "absolute", top, left, width: popupWidth });
+    setPopupStyle({ position: "fixed", top, left, width: popupWidth });
   };
 
   useEffect(() => {
     if (!open) return;
     computePosition();
     const onPointer = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (!rootRef.current?.contains(target) && !popupRef.current?.contains(target)) {
+        setOpen(false);
+      }
     };
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
     };
     window.addEventListener("resize", computePosition);
+    window.addEventListener("scroll", computePosition, true);
     document.addEventListener("mousedown", onPointer);
     document.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("resize", computePosition);
+      window.removeEventListener("scroll", computePosition, true);
       document.removeEventListener("mousedown", onPointer);
       document.removeEventListener("keydown", onKey);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const toggle = () => {
@@ -116,73 +108,82 @@ export function DateRangePicker({
   const inRange = (day: Date) => day >= startOfDay(preview.start) && day <= endOfDay(preview.end);
   const isEdge = (day: Date) => sameDay(day, preview.start) || sameDay(day, preview.end);
 
-  const popup = open ? (
-    <div
-      role="dialog"
-      aria-label="Choisir une période"
-      style={popupStyle}
-      className="z-[9999] rounded-card border border-line bg-surface p-4 shadow-card"
-    >
-      <div className="mb-3 flex items-center justify-between">
-        <button
-          type="button"
-          aria-label="Mois précédent"
-          onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
-          className="rounded-lg p-1.5 text-muted hover:bg-sand hover:text-ink"
+  const popup = (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          ref={popupRef}
+          role="dialog"
+          aria-label="Choisir une période"
+          style={popupStyle}
+          initial={{ opacity: 0, y: -6, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -4, scale: 0.98 }}
+          transition={{ duration: 0.16, ease: "easeOut" }}
+          className="z-[9999] rounded-card border border-line bg-surface p-4 shadow-[0_8px_24px_rgb(30_36_43/0.1)]"
         >
-          ‹
-        </button>
-        <span className="text-xs font-bold capitalize text-ink">
-          {MONTHS[month.getMonth()]} {month.getFullYear()}
-        </span>
-        <button
-          type="button"
-          aria-label="Mois suivant"
-          onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
-          className="rounded-lg p-1.5 text-muted hover:bg-sand hover:text-ink"
-        >
-          ›
-        </button>
-      </div>
-
-      <div className="grid grid-cols-7 gap-y-1 text-center text-[11px]">
-        {WEEKDAYS.map((label, index) => (
-          <span key={index} className="py-1 font-semibold text-faint">{label}</span>
-        ))}
-        {days.map((day) => {
-          const outside = day.getMonth() !== month.getMonth();
-          const disabled = day > endOfDay(max);
-          const edge = !outside && isEdge(day);
-          const middle = !outside && inRange(day);
-          return (
+          <div className="mb-3 flex items-center justify-between">
             <button
-              key={day.toISOString()}
               type="button"
-              disabled={disabled || outside}
-              onClick={() => pick(day)}
-              onMouseEnter={() => setHover(day)}
-              className={`h-8 text-xs font-semibold transition-colors disabled:cursor-default ${
-                edge
-                  ? "rounded-lg bg-accent text-white"
-                  : middle
-                    ? "bg-accent-soft text-accent"
-                    : outside
-                      ? "text-transparent"
-                      : disabled
-                        ? "text-faint/50"
-                        : "rounded-lg text-ink hover:bg-sand"
-              }`}
+              aria-label="Mois précédent"
+              onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
+              className="rounded-lg p-1.5 text-muted hover:bg-sand hover:text-ink"
             >
-              {outside ? "" : day.getDate()}
+              ‹
             </button>
-          );
-        })}
-      </div>
-      <p className="mt-3 text-[11px] text-muted">
-        {anchor ? "Choisissez la date de fin." : "Choisissez la date de début, puis celle de fin."}
-      </p>
-    </div>
-  ) : null;
+            <span className="text-xs font-bold capitalize text-ink">
+              {MONTHS[month.getMonth()]} {month.getFullYear()}
+            </span>
+            <button
+              type="button"
+              aria-label="Mois suivant"
+              onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
+              className="rounded-lg p-1.5 text-muted hover:bg-sand hover:text-ink"
+            >
+              ›
+            </button>
+          </div>
+
+          <div className="grid grid-cols-7 gap-y-1 text-center text-[11px]">
+            {WEEKDAYS.map((label, index) => (
+              <span key={index} className="py-1 font-semibold text-faint">{label}</span>
+            ))}
+            {days.map((day) => {
+              const outside = day.getMonth() !== month.getMonth();
+              const disabled = day > endOfDay(max);
+              const edge = !outside && isEdge(day);
+              const middle = !outside && inRange(day);
+              return (
+                <button
+                  key={day.toISOString()}
+                  type="button"
+                  disabled={disabled || outside}
+                  onClick={() => pick(day)}
+                  onMouseEnter={() => setHover(day)}
+                  className={`h-8 text-xs font-semibold transition-colors disabled:cursor-default ${
+                    edge
+                      ? "rounded-lg bg-accent text-white"
+                      : middle
+                        ? "bg-accent-soft text-accent"
+                        : outside
+                          ? "text-transparent"
+                          : disabled
+                            ? "text-faint/50"
+                            : "rounded-lg text-ink hover:bg-sand"
+                  }`}
+                >
+                  {outside ? "" : day.getDate()}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-3 text-[11px] text-muted">
+            {anchor ? "Choisissez la date de fin." : "Choisissez la date de début, puis celle de fin."}
+          </p>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 
   return (
     <div ref={rootRef} className="relative">
@@ -203,7 +204,7 @@ export function DateRangePicker({
         <span>{formatRange(value)}</span>
       </button>
 
-      {typeof document !== "undefined" && popup ? createPortal(popup, document.body) : null}
+      {typeof document !== "undefined" ? createPortal(popup, document.body) : null}
     </div>
   );
 }

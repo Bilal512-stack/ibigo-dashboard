@@ -3,14 +3,16 @@
 import { useMemo, useState } from "react";
 import { ActionCenter } from "@/components/dashboard/ActionCenter";
 import { CountryDistribution } from "@/components/dashboard/CountryDistribution";
+import { OverviewDonut } from "@/components/dashboard/OverviewDonut";
 import { DateRangePicker, presetRange, type DateRange } from "@/components/ui/DateRangePicker";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
 import { useCarriers } from "@/lib/carrier-store";
-import { formatFcfa, formatNumber } from "@/lib/format";
 import { TOKEN_PRICE_FCFA } from "@/lib/constants";
-import { countryTotals, overviewStats } from "@/lib/mock-data/overview";
+import { formatFcfa, formatNumber } from "@/lib/format";
+import { countryTotals, customersByCountry, overviewStats } from "@/lib/mock-data/overview";
 import { PAYMENTS_NOW, payments } from "@/lib/mock-data/payments";
+import type { CountryCode } from "@/types";
 
 // Les données de démonstration sont ancrées à cette date, qui joue le rôle d'« aujourd'hui ».
 const TODAY = new Date(PAYMENTS_NOW);
@@ -22,6 +24,12 @@ const PERIOD_TABS = [
   { label: "Trimestre", days: 90 },
 ];
 
+const COUNTRY_COLORS: Record<CountryCode, string> = {
+  CMR: "#10B981",
+  RCA: "#4F6BED",
+  TCHAD: "#F5B301",
+};
+
 export function DashboardPage() {
   const [activeTab, setActiveTab] = useState<string | null>("Aujourd'hui");
   const [range, setRange] = useState<DateRange>(() => presetRange(TODAY, 1));
@@ -32,12 +40,25 @@ export function DashboardPage() {
     const sales = payments.filter(
       (p) => p.status === "Réussi" && p.timestamp >= range.start.getTime() && p.timestamp <= range.end.getTime(),
     );
+    const byCountry = customersByCountry.map((c) => {
+      const countrySales = sales.filter((s) => s.country === c.code);
+      return {
+        code: c.code,
+        name: c.name,
+        tokens: countrySales.reduce((sum, s) => sum + s.tokens, 0),
+        amountFcfa: countrySales.reduce((sum, s) => sum + s.amountFcfa, 0),
+        color: COUNTRY_COLORS[c.code],
+      };
+    });
     return {
       tokens: sales.reduce((sum, p) => sum + p.tokens, 0),
       amountFcfa: sales.reduce((sum, p) => sum + p.amountFcfa, 0),
       count: sales.length,
+      byCountry,
     };
   }, [range]);
+
+  const [cargosStat, , missionsStat] = overviewStats;
 
   const kpis = [
     {
@@ -51,23 +72,17 @@ export function DashboardPage() {
       progressPercent: (countryTotals.carriers / countryTotals.users) * 100,
       sparkColor: "#F59E0B",
     },
-    ...overviewStats.map((stat, index) => ({ ...stat, sparkColor: ["#4F6BED", "#8B5CF6", "#10B981"][index] })),
+    { ...cargosStat, sparkColor: "#4F6BED" },
+    { ...missionsStat, sparkColor: "#10B981" },
     {
-      label: "Jetons achetés",
-      value: formatNumber(period.tokens),
-      icon: "gift",
-      subtext: `Sur la période • 1 jeton = ${formatFcfa(TOKEN_PRICE_FCFA)}`,
-      extraRight: `${formatNumber(period.count)} achat${period.count > 1 ? "s" : ""}`,
-      progressPercent: (period.tokens / countryTotals.tokensPurchased) * 100,
-      sparkColor: "#FD4F49",
-    },
-    {
-      label: "Montant des achats",
+      label: "Achats de jetons",
       value: formatFcfa(period.amountFcfa),
-      icon: "shield",
-      subtext: "Packs de jetons sur la période",
-      extraRight: `${formatFcfa(period.count ? Math.round(period.amountFcfa / period.count) : 0)} / achat`,
-      sparkColor: "#06B6D4",
+      delta: `${formatNumber(period.tokens)} jetons`,
+      tone: "info" as const,
+      icon: "gift",
+      subtext: `${formatNumber(period.count)} achat${period.count > 1 ? "s" : ""} • 1 j. = ${formatFcfa(TOKEN_PRICE_FCFA)}`,
+      progressPercent: Math.min(100, (period.tokens / countryTotals.tokensPurchased) * 100),
+      sparkColor: "#FD4F49",
     },
   ];
 
@@ -113,17 +128,28 @@ export function DashboardPage() {
         </div>
       </PageHeader>
 
-      {/* KPIs globaux */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+      {/* 4 KPIs principaux */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {kpis.map((stat) => (
           <StatCard key={stat.label} {...stat} />
         ))}
       </div>
 
+      {/* Diagrammes circulaires animés */}
+      <OverviewDonut
+        carriersCount={countryTotals.carriers}
+        shippersCount={countryTotals.shippers}
+        activeCargos={142}
+        activeTrucks={86}
+        periodByCountry={period.byCountry}
+        periodTokens={period.tokens}
+        periodAmountFcfa={period.amountFcfa}
+      />
+
       {/* Répartition géographique */}
       <CountryDistribution />
 
-      {/* Centre d'actions prioritaires */}
+      {/* Opérations & dossiers à traiter */}
       <ActionCenter />
     </>
   );

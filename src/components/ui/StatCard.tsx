@@ -1,3 +1,6 @@
+"use client";
+
+import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 import type { StatusTone } from "@/types";
 
@@ -126,7 +129,13 @@ export function StatCard({ label, value, delta, tone = "neutral", icon, subtext,
   const iconConfig = icon ? ICONS[icon] : undefined;
 
   return (
-    <div className="bg-surface border border-line rounded-card p-5 shadow-card flex flex-col justify-between">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.22, ease: "easeOut" }}
+      className="bg-surface border border-line rounded-card p-5 shadow-card flex flex-col justify-between transition-colors hover:border-faint/60"
+    >
       <div>
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">{label}</span>
@@ -154,7 +163,13 @@ export function StatCard({ label, value, delta, tone = "neutral", icon, subtext,
       <div className="space-y-2 pt-2 border-t border-line-subtle">
         {progressPercent !== undefined && (
           <div className="w-full bg-line-subtle h-1.5 rounded-full overflow-hidden">
-            <div className="h-full rounded-full" style={{ width: `${progressPercent}%`, backgroundColor: sparkColor }} />
+            <motion.div
+              className="h-full rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPercent}%` }}
+              transition={{ duration: 0.55, ease: "easeOut" }}
+              style={{ backgroundColor: sparkColor }}
+            />
           </div>
         )}
         <div className="flex items-center justify-between text-[11px] text-muted">
@@ -162,6 +177,6 @@ export function StatCard({ label, value, delta, tone = "neutral", icon, subtext,
           {extraRight && <span className="font-bold text-ink shrink-0 ml-1">{extraRight}</span>}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

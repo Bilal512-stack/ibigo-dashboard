@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
 import { StatusPill } from "@/components/ui/StatusPill";
@@ -83,15 +84,24 @@ export function ActionCenter() {
                 type="button"
                 aria-pressed={active}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-3.5 py-1.5 rounded-xl transition-colors whitespace-nowrap ${
+                className={`relative px-3.5 py-1.5 rounded-xl transition-colors whitespace-nowrap ${
                   active
-                    ? "bg-dark-card text-white font-bold"
+                    ? "text-white font-bold"
                     : "bg-sand/70 border border-line-subtle text-muted hover:text-ink"
                 }`}
               >
-                {tab.label}
-                <span className={`ml-1.5 tabular-nums ${active ? "text-accent" : "text-faint"}`}>
-                  ({tab.count})
+                {active && (
+                  <motion.span
+                    layoutId="action-center-tab"
+                    transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                    className="absolute inset-0 rounded-xl bg-dark-card"
+                  />
+                )}
+                <span className="relative z-10">
+                  {tab.label}
+                  <span className={`ml-1.5 tabular-nums ${active ? "text-accent" : "text-faint"}`}>
+                    ({tab.count})
+                  </span>
                 </span>
               </button>
             );
@@ -100,6 +110,14 @@ export function ActionCenter() {
       </div>
 
       {/* Contenu par onglet */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.16, ease: "easeOut" }}
+        >
       {activeTab === "kyc" && (
         pendingCarriers.length === 0 ? (
           <EmptyState text="Aucun dossier transporteur en attente de validation." />
@@ -423,6 +441,8 @@ export function ActionCenter() {
       )}
 
       {/* Pied */}
+        </motion.div>
+      </AnimatePresence>
       <div className="px-4 sm:px-6 py-3 border-t border-line bg-sand/20 flex items-center justify-between text-xs text-muted">
         <span>Traitement direct depuis la vue d&apos;ensemble</span>
         <Link href={footerLink.href} className="font-bold text-accent hover:underline">

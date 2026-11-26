@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCarriers } from "@/lib/carrier-store";
@@ -209,12 +210,17 @@ export function NotificationBell() {
         )}
       </button>
 
-      {open && (
-        <div
-          role="dialog"
-          aria-label="Centre de notifications"
-          className="fixed inset-x-4 top-[76px] sm:inset-x-auto sm:top-auto sm:absolute sm:right-0 z-50 sm:mt-2 sm:w-[24rem] overflow-hidden rounded-card border border-line bg-surface shadow-[0_8px_24px_rgb(30_36_43/0.08)]"
-        >
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            role="dialog"
+            aria-label="Centre de notifications"
+            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: 0.16, ease: "easeOut" }}
+            className="fixed inset-x-4 top-[76px] sm:inset-x-auto sm:top-auto sm:absolute sm:right-0 z-50 sm:mt-2 sm:w-[24rem] overflow-hidden rounded-card border border-line bg-surface shadow-[0_8px_24px_rgb(30_36_43/0.08)]"
+          >
           {/* En-tête */}
           <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-line">
             <div className="flex items-center gap-2">
@@ -319,8 +325,9 @@ export function NotificationBell() {
               Vue d&apos;ensemble
             </Link>
           </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
