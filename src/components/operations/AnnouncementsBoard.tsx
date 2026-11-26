@@ -122,12 +122,6 @@ export function AnnouncementsBoard({
                   <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
                   <circle cx="12" cy="12" r="3" />
                 </RowAction>
-                <RowAction title="Apparier" hoverClassName="hover:bg-line-subtle hover:text-accent">
-                  <polyline points="16 3 21 3 21 8" />
-                  <line x1="4" y1="20" x2="21" y2="3" />
-                  <polyline points="21 16 21 21 16 21" />
-                  <line x1="15" y1="15" x2="21" y2="21" />
-                </RowAction>
                 <RowAction title="Supprimer" hoverClassName="hover:bg-danger-soft hover:text-danger">
                   <path d="M3 6h18" />
                   <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
@@ -191,12 +185,6 @@ export function AnnouncementsBoard({
                     <RowAction title="Voir les détails" hoverClassName="hover:bg-line-subtle hover:text-ink" onClick={() => setSelected(item)}>
                       <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
                       <circle cx="12" cy="12" r="3" />
-                    </RowAction>
-                    <RowAction title="Apparier" hoverClassName="hover:bg-line-subtle hover:text-accent">
-                      <polyline points="16 3 21 3 21 8" />
-                      <line x1="4" y1="20" x2="21" y2="3" />
-                      <polyline points="21 16 21 21 16 21" />
-                      <line x1="15" y1="15" x2="21" y2="21" />
                     </RowAction>
                     <RowAction title="Supprimer" hoverClassName="hover:bg-danger-soft hover:text-danger">
                       <path d="M3 6h18" />
